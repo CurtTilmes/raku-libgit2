@@ -15,5 +15,3 @@ if $!
 
 
 say $repo;
-
-say $repo.commondir;

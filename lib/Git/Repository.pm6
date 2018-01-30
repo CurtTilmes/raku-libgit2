@@ -2,6 +2,10 @@ use NativeCall;
 use Git::Error;
 use Git::Buffer;
 use Git::Config;
+use Git::Reference;
+use Git::Oid;
+use Git::Strarray;
+use Git::Remote;
 
 enum Git::Repository::OpenFlag (
     GIT_REPOSITORY_OPEN_NO_SEARCH => 1 +< 0,
@@ -80,6 +84,30 @@ class Git::Repository is repr('CPointer')
         is native('git2') {}
 
     sub git_repository_config(Pointer is rw, Git::Repository --> int32)
+        is native('git2') {}
+
+    sub git_reference_lookup(Pointer is rw, Git::Repository, Str --> int32)
+        is native('git2') {}
+
+    sub git_reference_dwim(Pointer is rw, Git::Repository, Str --> int32)
+        is native('git2') {}
+
+    sub git_reference_name_to_id(Git::Oid, Git::Repository, Str --> int32)
+        is native('git2') {}
+
+    sub git_reference_list(Git::Strarray, Git::Repository --> int32)
+        is native('git2') {}
+
+    sub git_tag_list(Git::Strarray, Git::Repository --> int32)
+        is native('git2') {}
+
+    sub git_tag_list_match(Git::Strarray, Str, Git::Repository --> int32)
+        is native('git2') {}
+
+    sub git_remote_list(Git::Strarray, Git::Repository --> int32)
+        is native('git2') {}
+
+    sub git_remote_lookup(Pointer is rw, Git::Repository, Str --> int32)
         is native('git2') {}
 
     method new()
@@ -181,6 +209,56 @@ class Git::Repository is repr('CPointer')
         my Pointer $ptr .= new;
         check(git_repository_config($ptr, self));
         nativecast(Git::Config, $ptr);
+    }
+
+    method reference(Str $name)
+    {
+        my Pointer $ptr .= new;
+        check(git_reference_lookup($ptr, self, $name));
+        nativecast(Git::Reference, $ptr);
+    }
+
+    method ref(Str $shorthand)
+    {
+        my Pointer $ptr .= new;
+        check(git_reference_dwim($ptr, self, $shorthand));
+        nativecast(Git::Reference, $ptr);
+    }
+
+    method name-to-id(Str $name)
+    {
+        my Git::Oid $oid .= new;
+        check(git_reference_name_to_id($oid, self, $name));
+        $oid
+    }
+
+    method reference-list()
+    {
+        my Git::Strarray $array .= new;
+        check(git_reference_list($array, self));
+        $array.list
+    }
+
+    method tag-list(Str $pattern?)
+    {
+        my Git::Strarray $array .= new;
+        check($pattern ?? git_tag_list_match($array, $pattern, self)
+                       !! git_tag_list($array, self));
+        $array.list
+    }
+
+    method remote-list()
+    {
+        my Git::Strarray $array .= new;
+        check(git_remote_list($array, self));
+        $array.list
+    }
+
+    method remote-lookup(Str $name)
+    {
+        my Pointer $ptr .= new;
+        check(git_remote_lookup($ptr, self, $name));
+        nativecast(Git::Remote, $ptr)
     }
 
     submethod DESTROY { git_repository_free(self) }
