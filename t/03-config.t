@@ -1,9 +1,8 @@
 use Test;
+use File::Temp;
 use LibGit2;
 
-my $config_file = 'config_test';
-
-LEAVE $config_file.IO.unlink;
+my ($config_file, $filehandle) = tempfile;
 
 ok my $config = Git::Config.new, 'new';
 
