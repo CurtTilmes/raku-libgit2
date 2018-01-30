@@ -1,0 +1,41 @@
+{
+    "name" : "LibGit2",
+
+    "version" : "0.1",
+
+    "source-url" : "https://github.com/CurtTilmes/perl6-libgit2.git",
+
+    "perl" : "6.c",
+
+    "tags" : [ "GIT" ],
+
+    "provides" : {
+        "LibGit2"              : "lib/LibGit2.pm6",
+        "Git::Buffer"          : "lib/Git/Buffer.pm6",
+        "Git::Checkout"        : "lib/Git/Checkout.pm6",
+        "Git::Clone"           : "lib/Git/Clone.pm6",
+        "Git::Config"          : "lib/Git/Config.pm6",
+        "Git::Error"           : "lib/Git/Error.pm6",
+        "Git::Index"           : "lib/Git/Index.pm6",
+        "Git::Oid"             : "lib/Git/Oid.pm6",
+        "Git::Remote"          : "lib/Git/Remote.pm6",
+        "Git::Repository"      : "lib/Git/Repository.pm6",
+        "Git::Strarray"        : "lib/Git/Strarray.pm6",
+        "Git::Tree"            : "lib/Git/Tree.pm6"
+    },
+
+    "depends" : [ "NativeCall" ],
+
+    "description" : "Perl6 bindings for Libgit2",
+
+    "test-depends" : [ "Test", "Test::When", "Test::META", "File::Temp" ],
+
+    "license" : "NASA-1.3",
+
+    "authors" : [ "Curt Tilmes <Curt.Tilmes@nasa.gov>" ],
+
+    "support" : {
+      "source" : "https://github.com/CurtTilmes/perl6-libgit2.git",
+      "bugtracker" : "https://github.com/CurtTilmes/perl6-libgit2/issues"
+    }
+}
