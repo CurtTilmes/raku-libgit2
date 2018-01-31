@@ -1,6 +1,9 @@
 use NativeCall;
 use Git::Error;
 
+constant \GIT_OID_RAWSZ := 20;
+constant \GIT_OID_HEXSZ := GIT_OID_RAWSZ * 2;
+
 class Git::Oid is repr('CStruct')
 {
     has uint8 $.b0;
@@ -23,5 +26,8 @@ class Git::Oid is repr('CStruct')
     has uint8 $.b17;
     has uint8 $.b18;
     has uint8 $.b19;
+
+    method Str(--> Str)
+        is native('git2') is symbol('git_oid_tostr_s') {}
 }
 

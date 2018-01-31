@@ -6,6 +6,7 @@ use Git::Reference;
 use Git::Oid;
 use Git::Strarray;
 use Git::Remote;
+use Git::Commit;
 
 enum Git::Repository::OpenFlag (
     GIT_REPOSITORY_OPEN_NO_SEARCH => 1 +< 0,
@@ -104,11 +105,22 @@ class Git::Repository is repr('CPointer')
     sub git_tag_list_match(Git::Strarray, Str, Git::Repository --> int32)
         is native('git2') {}
 
+    sub git_tag_lookup(Pointer is rw, Git::Repository, Git::Oid --> int32)
+        is native('git2') {}
+
     sub git_remote_list(Git::Strarray, Git::Repository --> int32)
         is native('git2') {}
 
     sub git_remote_lookup(Pointer is rw, Git::Repository, Str --> int32)
         is native('git2') {}
+
+    sub git_commit_lookup(Pointer is rw, Git::Repository, Git::Oid --> int32)
+        is native('git2') {}
+
+    sub git_branch_create(Pointer is rw, Git::Repository, Str,
+                          Git::Commit, int32 --> int32)
+        is native('git2') {}
+
 
     method new()
     {
@@ -201,28 +213,28 @@ class Git::Repository is repr('CPointer')
     {
         my Pointer $ptr .= new;
         check(git_clone($ptr, $url, $local-path, Any));
-        nativecast(Git::Repository, $ptr);
+        nativecast(Git::Repository, $ptr)
     }
 
     method config()
     {
         my Pointer $ptr .= new;
         check(git_repository_config($ptr, self));
-        nativecast(Git::Config, $ptr);
+        nativecast(Git::Config, $ptr)
     }
 
     method reference(Str $name)
     {
         my Pointer $ptr .= new;
         check(git_reference_lookup($ptr, self, $name));
-        nativecast(Git::Reference, $ptr);
+        nativecast(Git::Reference, $ptr)
     }
 
     method ref(Str $shorthand)
     {
         my Pointer $ptr .= new;
         check(git_reference_dwim($ptr, self, $shorthand));
-        nativecast(Git::Reference, $ptr);
+        nativecast(Git::Reference, $ptr)
     }
 
     method name-to-id(Str $name)
@@ -247,6 +259,13 @@ class Git::Repository is repr('CPointer')
         $array.list
     }
 
+    method tag-lookup(Git::Oid $oid)
+    {
+        my Pointer $ptr .= new;
+        check(git_tag_lookup($ptr, self, $oid));
+        nativecast(Git::Tag, $ptr)
+    }
+
     method remote-list()
     {
         my Git::Strarray $array .= new;
@@ -259,6 +278,13 @@ class Git::Repository is repr('CPointer')
         my Pointer $ptr .= new;
         check(git_remote_lookup($ptr, self, $name));
         nativecast(Git::Remote, $ptr)
+    }
+
+    method commit-lookup(Git::Oid $oid)
+    {
+        my Pointer $ptr .= new;
+        check(git_commit_lookup($ptr, self, $oid));
+        nativecast(Git::Commit, $ptr)
     }
 
     submethod DESTROY { git_repository_free(self) }
