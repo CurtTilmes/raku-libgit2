@@ -12,12 +12,5 @@ ok (@tag-list = $repo.tag-list('0*')), 'tag list match';
 
 like '0.1', /@tag-list/, 'tag 0.1 in tag list';
 
-my $id = $repo.name-to-id('refs/tags/0.1');
+ok my $id = $repo.name-to-id('refs/tags/0.1'), 'name-to-id';
 
-say $id;
-
-say ~$id;
-
-my $tag = $repo.tag-lookup($id);
-
-say $tag;
