@@ -7,6 +7,7 @@ use Git::Oid;
 use Git::Strarray;
 use Git::Remote;
 use Git::Commit;
+use Git::Blob;
 
 enum Git::Repository::OpenFlag (
     GIT_REPOSITORY_OPEN_NO_SEARCH => 1 +< 0,
@@ -121,6 +122,12 @@ class Git::Repository is repr('CPointer')
                           Git::Commit, int32 --> int32)
         is native('git2') {}
 
+    sub git_blob_create_frombuffer(Git::Oid, Git::Repository, Blob, size_t
+                                   --> int32)
+        is native('git2') {}
+
+    sub git_blob_lookup(Pointer is rw, Git::Repository, Git::Oid --> int32)
+        is native('git2') {}
 
     method new()
     {
@@ -285,6 +292,25 @@ class Git::Repository is repr('CPointer')
         my Pointer $ptr .= new;
         check(git_commit_lookup($ptr, self, $oid));
         nativecast(Git::Commit, $ptr)
+    }
+
+    multi method blob-create(Blob $buf)
+    {
+        my Git::Oid $oid .= new;
+        check(git_blob_create_frombuffer($oid, self, $buf, $buf.bytes));
+        $oid
+    }
+
+    multi method blob-create(Str $str)
+    {
+        samewith($str.encode)
+    }
+
+    method blob-lookup(Git::Oid $oid)
+    {
+        my Pointer $ptr .= new;
+        check(git_blob_lookup($ptr, self, $oid));
+        nativecast(Git::Blob, $ptr)
     }
 
     submethod DESTROY { git_repository_free(self) }

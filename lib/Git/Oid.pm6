@@ -15,12 +15,22 @@ class Git::Oid is repr('CPointer')
     sub git_oid_fromstr(Git::Oid, Str --> int32)
         is native('git2') {}
 
-    multi method new { oid-alloc(GIT_OID_RAWSZ, 1) }
+    sub git_oid_cpy(Git::Oid, Pointer)
+        is native('git2') {}
 
-    multi method new(Str $str)
+    multi method new(--> Git::Oid) { oid-alloc(GIT_OID_RAWSZ, 1) }
+
+    multi method new(Str $str --> Git::Oid)
     {
         my $oid = Git::Oid.new;
         check(git_oid_fromstr($oid, $str));
+        $oid
+    }
+
+    multi method new(Pointer $ptr --> Git::Oid)
+    {
+        my $oid = Git::Oid.new;
+        git_oid_cpy($oid, $ptr);
         $oid
     }
 
