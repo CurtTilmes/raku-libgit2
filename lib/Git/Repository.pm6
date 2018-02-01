@@ -8,6 +8,9 @@ use Git::Strarray;
 use Git::Remote;
 use Git::Commit;
 use Git::Blob;
+use Git::Tree;
+use Git::TreeBuilder;
+use Git::Signature;
 
 enum Git::Repository::OpenFlag (
     GIT_REPOSITORY_OPEN_NO_SEARCH => 1 +< 0,
@@ -126,7 +129,19 @@ class Git::Repository is repr('CPointer')
                                    --> int32)
         is native('git2') {}
 
+    sub git_blob_create_fromdisk(Git::Oid, Git::Repository, Str --> int32)
+        is native('git2') {}
+
     sub git_blob_lookup(Pointer is rw, Git::Repository, Git::Oid --> int32)
+        is native('git2') {}
+
+    sub git_treebuilder_new(Pointer is rw, Git::Repository, Git::Tree --> int32)
+        is native('git2') {}
+
+    sub git_revparse_single(Pointer is rw, Git::Repository, Str --> int32)
+        is native('git2') {}
+
+    sub git_signature_default(Pointer is rw, Git::Repository --> int32)
         is native('git2') {}
 
     method new()
@@ -306,11 +321,39 @@ class Git::Repository is repr('CPointer')
         samewith($str.encode)
     }
 
+    multi method blob-create(IO::Path $path)
+    {
+        my Git::Oid $oid .= new;
+        check(git_blob_create_fromdisk($oid, self, ~$path));
+        $oid
+    }
+
     method blob-lookup(Git::Oid $oid)
     {
         my Pointer $ptr .= new;
         check(git_blob_lookup($ptr, self, $oid));
         nativecast(Git::Blob, $ptr)
+    }
+
+    method treebuilder(Git::Tree $tree = Git::Tree)
+    {
+        my Pointer $ptr .= new;
+        check(git_treebuilder_new($ptr, self, $tree));
+        nativecast(Git::TreeBuilder, $ptr)
+    }
+
+    method revparse-single(Str $spec)
+    {
+        my Pointer $ptr .= new;
+        check(git_revparse_single($ptr, self, $spec));
+        nativecast(Git::Object, $ptr)
+    }
+
+    method signature-default(--> Git::Signature)
+    {
+        my Pointer $ptr .= new;
+        check(git_signature_default($ptr, self));
+        nativecast(Git::Signature, $ptr)
     }
 
     submethod DESTROY { git_repository_free(self) }
