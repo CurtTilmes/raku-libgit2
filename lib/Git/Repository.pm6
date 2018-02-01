@@ -222,7 +222,6 @@ class Git::Repository is repr('CPointer')
                     Bool :$across-fs = False)
     {
         my Git::Buffer $buf .= new;
-        LEAVE $buf.free;
         check(git_repository_discover($buf, $start-path, $across-fs ?? 1 !! 0,
                                       $ceiling-dirs));
         $buf.str

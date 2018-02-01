@@ -12,6 +12,6 @@ my $builder = $repo.treebuilder;
 
 say $builder;
 
-my $obj = $repo.revparse-single('HEAD:README.md');
+#my $obj = $repo.revparse-single('HEAD:README.md');
 
-say $obj;
+#say $obj;

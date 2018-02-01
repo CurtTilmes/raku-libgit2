@@ -5,11 +5,10 @@ class Git::Strarray is repr('CStruct')
     has CArray[Str] $.strings;
     has size_t $.count;
 
-    method free() is native('git2') is symbol('git_strarray_free') {}
+    sub git_strarray_free(Git::Strarray)
+        is native('git2') {}
 
-    method list
-    {
-        LEAVE self.free;
-        do for 0..^$!count { ~$!strings[$_] }
-    }
+    submethod DESTROY { git_strarray_free(self) }
+
+    method list { $!strings[0..^$!count] }
 }

@@ -48,7 +48,6 @@ class Git::Signature is repr('CStruct')
         nativecast(Git::Signature, $ptr)
     }
 
-
     method when
     {
         DateTime.new($!when.time, timezone => $!when.offset*60)

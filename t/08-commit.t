@@ -15,3 +15,9 @@ my $sig = $commit.author;
 say $sig.name;
 say $sig.email;
 say $sig.when;
+
+say $commit.body;
+
+say $commit.committer;
+
+say $commit.header('committer');

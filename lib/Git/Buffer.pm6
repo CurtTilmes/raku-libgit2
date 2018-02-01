@@ -2,13 +2,13 @@ use NativeCall;
 
 class Git::Buffer is repr('CStruct')
 {
-    has Pointer $.ptr;
+    has CArray[uint8] $.ptr;
     has size_t $.asize;
     has size_t $.size;
 
     method buf
     {
-        buf8.new(nativecast(CArray[uint8], $!ptr)[0..^$!size])
+        buf8.new($!ptr[0..^$!size])
     }
 
     method str
@@ -16,5 +16,8 @@ class Git::Buffer is repr('CStruct')
         self.buf.decode
     }
 
-    method free() is native('git2') is symbol('git_buf_free') {}
+    sub git_buf_free(Git::Buffer)
+        is native('git2') {}
+
+    submethod DESTROY { git_buf_free(self) }
 }
