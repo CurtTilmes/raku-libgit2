@@ -11,6 +11,8 @@ use Git::Blob;
 use Git::Tree;
 use Git::TreeBuilder;
 use Git::Signature;
+use Git::Object;
+use Git::Blame;
 
 enum Git::Repository::OpenFlag (
     GIT_REPOSITORY_OPEN_NO_SEARCH => 1 +< 0,
@@ -109,16 +111,10 @@ class Git::Repository is repr('CPointer')
     sub git_tag_list_match(Git::Strarray, Str, Git::Repository --> int32)
         is native('git2') {}
 
-    sub git_tag_lookup(Pointer is rw, Git::Repository, Git::Oid --> int32)
-        is native('git2') {}
-
     sub git_remote_list(Git::Strarray, Git::Repository --> int32)
         is native('git2') {}
 
     sub git_remote_lookup(Pointer is rw, Git::Repository, Str --> int32)
-        is native('git2') {}
-
-    sub git_commit_lookup(Pointer is rw, Git::Repository, Git::Oid --> int32)
         is native('git2') {}
 
     sub git_branch_create(Pointer is rw, Git::Repository, Str,
@@ -132,9 +128,6 @@ class Git::Repository is repr('CPointer')
     sub git_blob_create_fromdisk(Git::Oid, Git::Repository, Str --> int32)
         is native('git2') {}
 
-    sub git_blob_lookup(Pointer is rw, Git::Repository, Git::Oid --> int32)
-        is native('git2') {}
-
     sub git_treebuilder_new(Pointer is rw, Git::Repository, Git::Tree --> int32)
         is native('git2') {}
 
@@ -142,6 +135,21 @@ class Git::Repository is repr('CPointer')
         is native('git2') {}
 
     sub git_signature_default(Pointer is rw, Git::Repository --> int32)
+        is native('git2') {}
+
+    sub git_tag_create(Git::Oid, Git::Repository, Str, Pointer, Git::Signature,
+                       Str, int32 --> int32)
+        is native('git2') {}
+
+    sub git_tag_delete(Git::Repository, Str --> int32)
+        is native('git2') {}
+
+    sub git_object_lookup(Pointer is rw, Git::Repository, Git::Oid, int32
+                          --> int32)
+        is native('git2') {}
+
+    sub git_blame_file(Pointer is rw, Git::Repository, Str, Git::Blame::Options
+                   --> int32)
         is native('git2') {}
 
     method new()
@@ -280,13 +288,6 @@ class Git::Repository is repr('CPointer')
         $array.list
     }
 
-    method tag-lookup(Git::Oid $oid)
-    {
-        my Pointer $ptr .= new;
-        check(git_tag_lookup($ptr, self, $oid));
-        nativecast(Git::Tag, $ptr)
-    }
-
     method remote-list()
     {
         my Git::Strarray $array .= new;
@@ -299,13 +300,6 @@ class Git::Repository is repr('CPointer')
         my Pointer $ptr .= new;
         check(git_remote_lookup($ptr, self, $name));
         nativecast(Git::Remote, $ptr)
-    }
-
-    method commit-lookup(Git::Oid $oid)
-    {
-        my Pointer $ptr .= new;
-        check(git_commit_lookup($ptr, self, $oid));
-        nativecast(Git::Commit, $ptr)
     }
 
     multi method blob-create(Blob $buf)
@@ -327,13 +321,6 @@ class Git::Repository is repr('CPointer')
         $oid
     }
 
-    method blob-lookup(Git::Oid $oid)
-    {
-        my Pointer $ptr .= new;
-        check(git_blob_lookup($ptr, self, $oid));
-        nativecast(Git::Blob, $ptr)
-    }
-
     method treebuilder(Git::Tree $tree = Git::Tree)
     {
         my Pointer $ptr .= new;
@@ -353,6 +340,54 @@ class Git::Repository is repr('CPointer')
         my Pointer $ptr .= new;
         check(git_signature_default($ptr, self));
         nativecast(Git::Signature, $ptr)
+    }
+
+    method tag-create(Str:D $tag-name, Git::Objectish:D $target,
+                      Git::Signature :$tagger = self.signature-default,
+                      Str:D :$message = '', Bool :$force = False)
+    {
+        my Git::Oid $oid .= new;
+        check(git_tag_create($oid, self, $tag-name,
+                             nativecast(Pointer, $target),
+                             $tagger, $message, $force ?? 1 !! 0));
+        $oid
+    }
+
+    method tag-delete(Str $tag-name)
+    {
+        check(git_tag_delete(self, $tag-name))
+    }
+
+    method tag-lookup(Git::Oid $oid)    { self.lookup($oid, GIT_OBJ_TAG)    }
+    method commit-lookup(Git::Oid $oid) { self.lookup($oid, GIT_OBJ_COMMIT) }
+    method blob-lookup(Git::Oid $oid)   { self.lookup($oid, GIT_OBJ_BLOB)   }
+    method tree-lookup(Git::Oid $oid)   { self.lookup($oid, GIT_OBJ_TREE)   }
+
+    multi method lookup(Git::Oid:D $oid, Git::Type $type = GIT_OBJ_ANY)
+    {
+        my Pointer $ptr .= new;
+        check(git_object_lookup($ptr, self, $oid, $type));
+        given Git::Objectish.type($ptr)
+        {
+            when GIT_OBJ_TAG    { nativecast(Git::Tag, $ptr)    }
+            when GIT_OBJ_COMMIT { nativecast(Git::Commit, $ptr) }
+            when GIT_OBJ_TREE   { nativecast(Git::Tree, $ptr)   }
+            when GIT_OBJ_BLOB   { nativecast(Git::Blob, $ptr)   }
+            default             { nativecast(Git::Object, $ptr) }
+        }
+    }
+
+    multi method lookup(Git::Oid:D $oid, Str:D $type)
+    {
+        self.lookup($oid, Git::Objectish.type($type))
+    }
+
+    method blame-file(Str $path)
+    {
+        my Pointer $ptr .= new;
+        my Git::Blame::Options $opts .= new;
+        check(git_blame_file($ptr, self, $path, $opts));
+        nativecast(Git::Blame, $ptr)
     }
 
     submethod DESTROY { git_repository_free(self) }

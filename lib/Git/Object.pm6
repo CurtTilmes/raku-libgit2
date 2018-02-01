@@ -35,9 +35,30 @@ role Git::Objectish
     sub git_object_type(Pointer --> int32)
         is native('git2') {}
 
-    method type(--> Git::Type)
+    multi method type(Pointer $ptr --> Git::Type)
+    {
+        Git::Type(git_object_type(nativecast(Pointer, $ptr)))
+    }
+
+    multi method type(--> Git::Type)
     {
         Git::Type(git_object_type(nativecast(Pointer, self)))
+    }
+
+    sub git_object_string2type(Str --> int32)
+        is native('git2') {}
+
+    multi method type(Str $str)
+    {
+        Git::Type(git_object_string2type($str))
+    }
+
+    sub git_object_type2string(int32 --> Str)
+        is native('git2') {}
+
+    method type-string(--> Str)
+    {
+        git_object_type2string(git_object_type(nativecast(Pointer, self)))
     }
 
     sub git_object_owner(Pointer --> Pointer)

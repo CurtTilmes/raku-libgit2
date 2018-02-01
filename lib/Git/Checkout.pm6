@@ -71,8 +71,5 @@ class Git::Checkout::Options is repr('CStruct')
     has Pointer $.perfdata-cb;
     has Pointer $.perfdata-payload;
 
-    submethod BUILD
-    {
-        $!version = 1;
-    }
+    submethod BUILD { $!version = 1 }
 }

@@ -7,6 +7,7 @@ ok my $repo = Git::Repository.open('/tmp/mine'), 'open';
 my $oid = Git::Oid.new('09b0f95e3618ccb1284adbf4a210afc6d849c8c8');
 
 my $commit = $repo.commit-lookup($oid);
+#my $commit = $repo.lookup($oid, 'commit');
 
 say $commit;
 
@@ -27,6 +28,7 @@ say ~$commit.id;
 say $commit.owner;
 
 say $commit.type;
+say $commit.type-string;
 
 say $commit.summary;
 
@@ -54,3 +56,11 @@ say $parent.message;
 my $anc = $commit.ancestor(1);
 
 say $anc.message;
+
+say $repo.reference-list;
+
+#$repo.tag-create('1.0', $commit);
+
+say $repo.reference-list;
+
+say Git::Objectish.type('commit');
