@@ -36,6 +36,9 @@ class Git::Reference is repr('CPointer')
     sub git_branch_upstream(Pointer is rw, Git::Reference --> int32)
         is native('git2') {}
 
+    sub git_branch_move(Pointer is rw, Git::Reference, Str, int32 --> int32)
+        is native('git2') {}
+
     method is-branch(--> Bool)
     {
         git_reference_is_branch(self) == 1
@@ -89,6 +92,14 @@ class Git::Reference is repr('CPointer')
         my $ret = git_branch_upstream($ptr, self);
         return if $ret == GIT_ENOTFOUND;
         check($ret);
+        nativecast(Git::Reference, $ptr)
+    }
+
+    method branch-move(Str $new-branch-name, Bool :$force = False)
+    {
+        my Pointer $ptr .= new;
+        check(git_branch_move($ptr, self, $new-branch-name,
+                              $force ?? 1 !! 0));
         nativecast(Git::Reference, $ptr)
     }
 

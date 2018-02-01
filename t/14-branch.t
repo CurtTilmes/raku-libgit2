@@ -30,3 +30,7 @@ say $ref.branch-name;
 say $ref.branch-upstream;
 
 #$ref.branch-set-upstream();
+
+my $newref = $ref.branch-move('newbranch');
+
+say $newref.branch-name;

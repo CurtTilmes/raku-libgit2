@@ -179,6 +179,9 @@ class Git::Repository
     sub git_blob_create_fromdisk(Git::Oid, Git::Repository, Str --> int32)
         is native('git2') {}
 
+    sub git_blob_create_fromworkdir(Git::Oid, Git::Repository, Str --> int32)
+        is native('git2') {}
+
     sub git_treebuilder_new(Pointer is rw, Git::Repository, Git::Tree --> int32)
         is native('git2') {}
 
@@ -369,6 +372,13 @@ class Git::Repository
     {
         my Git::Oid $oid .= new;
         check(git_blob_create_fromdisk($oid, self, ~$path));
+        $oid
+    }
+
+    multi method blob-create(Str $path, :$workdir!)
+    {
+        my Git::Oid $oid .= new;
+        check(git_blob_create_fromworkdir($oid, self, $path));
         $oid
     }
 

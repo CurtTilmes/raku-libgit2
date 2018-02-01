@@ -2,6 +2,8 @@ use Test;
 use File::Temp;
 use LibGit2;
 
+plan 4;
+
 my $test-repo-dir = tempdir;
 
 diag "Test Repo $test-repo-dir";
@@ -29,6 +31,8 @@ subtest 'Memory',
 
 subtest 'File',
 {
+    plan 7;
+
     my $file = $test-repo-dir.IO.add('afile');
 
     $file.spurt("This is a blob on disk.\n");
@@ -46,4 +50,27 @@ subtest 'File',
     is $blob.rawsize, 24, 'rawsize';
 
     is $blob.content.decode, "This is a blob on disk.\n", 'content';
+}
+
+subtest 'Work Dir File',
+{
+    plan 7;
+
+    my $file = $test-repo-dir.IO.add('bfile');
+
+    $file.spurt("Working dir file.\n");
+
+    ok my $oid = $repo.blob-create('bfile', :workdir), 'blob create';
+
+    is ~$oid, '790fdef2738059aa6469e41f0a0334b7969eea50', 'oid';
+
+    ok my $blob = $repo.blob-lookup($oid), 'blob lookup';
+
+    is $blob.is-binary, False, 'is not binary';
+
+    is $blob.id, '790fdef2738059aa6469e41f0a0334b7969eea50', 'blob id';
+
+    is $blob.rawsize, 18, 'rawsize';
+
+    is $blob.content.decode, "Working dir file.\n", 'content';
 }
