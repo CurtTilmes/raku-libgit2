@@ -1,10 +1,8 @@
 use NativeCall;
 use Git::Error;
+use Git::Object;
 
-class Git::Tree is repr('CPointer')
+class Git::Tree is repr('CPointer') does Git::Objectish
 {
-    sub git_tree_free(Git::Tree)
-        is native('git2') {}
-
-    submethod DESTROY { git_tree_free(self) }
+    submethod DESTROY { self.free }
 }

@@ -1,22 +1,8 @@
 use NativeCall;
 use Git::Oid;
+use Git::Object;
 
-class Git::Tag is repr('CPointer')
+class Git::Tag is repr('CPointer') does Git::Objectish
 {
-    sub git_tag_free(Git::Tag)
-        is native('git2') {}
-
-    method id(--> Git::Oid)
-        is native('git2') is symbol('git_tag_id') {}
-
-    sub git_tag_owner(Git::Tag --> Pointer)
-        is native('git2') {}
-
-    method owner
-    {
-        my $ptr = git_tag_owner(self);
-        nativecast(::("Git::Repository"), $ptr)
-    }
-
-    submethod DESTROY { git_tag_free(self) }
+    submethod DESTROY { self.free }
 }

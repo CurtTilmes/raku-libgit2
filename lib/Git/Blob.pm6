@@ -1,12 +1,10 @@
 use NativeCall;
 use Git::Error;
 use Git::Oid;
+use Git::Object;
 
-class Git::Blob is repr('CPointer')
+class Git::Blob is repr('CPointer') does Git::Objectish
 {
-    sub git_blob_free(Git::Blob)
-        is native('git2') {}
-
     sub git_blob_is_binary(Git::Blob --> int32)
         is native('git2') {}
 
@@ -24,20 +22,11 @@ class Git::Blob is repr('CPointer')
 
     method is-binary { git_blob_is_binary(self) == 1 }
 
-    method id(--> Git::Oid) { Git::Oid.new(git_blob_id(self)) }
-
     method content
     {
         my $array = git_blob_rawcontent(self);
         buf8.new($array[0..^$.rawsize])
     }
 
-    method owner
-    {
-        my $ptr = git_blob_owner(self);
-        nativecast(::("Git::Repository"), $ptr)
-
-    }
-
-    submethod DESTROY { git_blob_free(self) }
+    submethod DESTROY { self.free }
 }

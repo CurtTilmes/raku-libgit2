@@ -14,18 +14,43 @@ enum Git::Type (
     GIT_OBJ_REF_DELTA => 7,
 );
 
-class Git::Object is repr('CPointer')
+role Git::Objectish
 {
-    sub git_object_free(Git::Object)
+    sub git_object_free(Pointer)
         is native('git2') {}
 
-    method id(--> GID::Oid)
-        is native('git2') is symbol('git_object_id') {}
+    method free
+    {
+        git_object_free(nativecast(Pointer, self))
+    }
 
-    sub git_object_type(Git::Object --> int32)
+    sub git_object_id(Pointer --> Git::Oid)
         is native('git2') {}
 
-    method type(--> Git::Type) { Git::Type(git_object_type(self)) }
+    method id(--> Git::Oid)
+    {
+        git_object_id(nativecast(Pointer, self))
+    }
 
-    submethod DESTROY { git_object_free(self) }
+    sub git_object_type(Pointer --> int32)
+        is native('git2') {}
+
+    method type(--> Git::Type)
+    {
+        Git::Type(git_object_type(nativecast(Pointer, self)))
+    }
+
+    sub git_object_owner(Pointer --> Pointer)
+        is native('git2') {}
+
+    method owner
+    {
+        my $ptr = git_object_owner(nativecast(Pointer, self));
+        nativecast(::("Git::Repository"), $ptr)
+    }
+}
+
+class Git::Object is repr('CPointer') does Git::Objectish
+{
+    submethod DESTROY { self.free }
 }

@@ -20,14 +20,14 @@ class Git::Oid is repr('CPointer')
 
     multi method new(--> Git::Oid) { oid-alloc(GIT_OID_RAWSZ, 1) }
 
-    multi method new(Str $str --> Git::Oid)
+    multi method new(Str:D $str --> Git::Oid)
     {
         my $oid = Git::Oid.new;
         check(git_oid_fromstr($oid, $str));
         $oid
     }
 
-    multi method new(Pointer $ptr --> Git::Oid)
+    multi method new(Pointer:D $ptr --> Git::Oid)
     {
         my $oid = Git::Oid.new;
         git_oid_cpy($oid, $ptr);
