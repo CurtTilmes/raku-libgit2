@@ -220,6 +220,15 @@ class Git::Repository
     sub git_repository_index(Pointer is rw, Git::Repository --> int32)
         is native('git2') {}
 
+    sub git_ignore_add_rule(Git::Repository, Str --> int32)
+        is native('git2') {}
+
+    sub git_ignore_clear_internal_rules(Git::Repository --> int32)
+        is native('git2') {}
+
+    sub git_ignore_path_is_ignored(int32 is rw, Git::Repository, Str --> int32)
+        is native('git2') {}
+
     method new()
     {
         my Pointer $ptr .= new;
@@ -522,6 +531,23 @@ class Git::Repository
         my Pointer $ptr .= new;
         check(git_repository_index($ptr, self));
         nativecast(Git::Index, $ptr)
+    }
+
+    method ignore-add(Str $rules)
+    {
+        check(git_ignore_add_rule(self, $rules));
+    }
+
+    method ignore-clear()
+    {
+        check(git_ignore_clear_internal_rules(self))
+    }
+
+    method is-ignored(Str $path)
+    {
+        my int32 $ignored = 0;
+        check(git_ignore_path_is_ignored($ignored, self, $path));
+        $ignored == 1
     }
 
     submethod DESTROY { git_repository_free(self) }
