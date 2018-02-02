@@ -7,7 +7,7 @@ my $index = $repo.index;
 
 say $index.entrycount;
 
-my $entry = $index.get-byindex(0);
+my $entry = $index.get-bypath('afile', 0);
 
 say "here";
 

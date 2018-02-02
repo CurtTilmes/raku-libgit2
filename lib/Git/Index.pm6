@@ -127,8 +127,11 @@ class Git::Index is repr('CPointer')
     method entrycount(--> size_t)
         is native('git2') is symbol('git_index_entrycount') {}
 
-    method get-byindex(size_t --> Git::Index::Entry)
+    method get-byindex(size_t $index --> Git::Index::Entry)
         is native('git2') is symbol('git_index_get_byindex') {}
+
+    method get-bypath(Str $path, int32 $stage --> Git::Index::Entry)
+        is native('git2') is symbol('git_index_get_bypath') {}
 
     submethod DESTROY { git_index_free(self) }
 }
