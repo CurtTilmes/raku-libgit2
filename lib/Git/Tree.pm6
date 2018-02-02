@@ -63,22 +63,22 @@ sub treewalk(Str $root, Git::Tree::Entry $entry, int64 $nonce --> int32)
 
 class Git::Tree is repr('CPointer') does Git::Objectish
 {
-    method entrycount(--> size_t)
+    method elems(--> size_t)
         is native('git2') is symbol('git_tree_entrycount') {}
 
-    method entry-byindex(size_t $idx --> Git::Tree::Entry)
+    multi method entry(size_t $idx --> Git::Tree::Entry)
         is native('git2') is symbol('git_tree_entry_byindex') {}
 
-    method entry-byid(Git::Oid $oid --> Git::Tree::Entry)
+    multi method entry(Git::Oid $oid --> Git::Tree::Entry)
         is native('git2') is symbol('git_tree_entry_byid') {}
 
-    method entry-byname(Str $name --> Git::Tree::Entry)
+    multi method entry(Str $name --> Git::Tree::Entry)
         is native('git2') is symbol('git_tree_entry_byname') {}
 
     sub git_tree_entry_bypath(Pointer is rw, Git::Tree, Str --> int32)
         is native('git2') {}
 
-    method entry-bypath(Str:D $path)
+    method entry-bypath(Str:D $path --> Git::Tree::Entry)
     {
         my Pointer $ptr .= new;
         check(git_tree_entry_bypath($ptr, self, $path));
