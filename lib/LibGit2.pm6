@@ -5,6 +5,7 @@ use Git::Config;
 use Git::Tree;
 use Git::Object;
 use Git::Message;
+use Git::Index;
 
 my package EXPORT::DEFAULT {}
 BEGIN for <
@@ -31,6 +32,34 @@ BEGIN for <
     GIT_OBJ_TAG
     GIT_OBJ_OFS_DELTA
     GIT_OBJ_REF_DELTA
+
+    GIT_OK
+    GIT_ERROR
+    GIT_ENOTFOUND
+    GIT_EEXISTS
+    GIT_EAMBIGUOUS
+    GIT_EBUFS
+    GIT_EUSER
+    GIT_EBAREREPO
+    GIT_EUNBORNBRANCH
+    GIT_EUNMERGED
+    GIT_ENONFASTFORWARD
+    GIT_EINVALIDSPEC
+    GIT_ECONFLICT
+    GIT_ELOCKED
+    GIT_EMODIFIED
+    GIT_EAUTH
+    GIT_ECERTIFICATE
+    GIT_EAPPLIED
+    GIT_EPEEL
+    GIT_EEOF
+    GIT_EINVALID
+    GIT_EUNCOMMITTED
+    GIT_EDIRECTORY
+    GIT_EMERGECONFLICT
+    GIT_PASSTHROUGH
+    GIT_ITEROVER
+
 > { EXPORT::DEFAULT::{$_} = ::($_) }
 
 sub git_libgit2_init(--> int32) is native('git2') {}

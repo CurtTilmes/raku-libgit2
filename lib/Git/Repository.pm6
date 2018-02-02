@@ -14,6 +14,7 @@ use Git::Signature;
 use Git::Object;
 use Git::Blame;
 use Git::Message;
+use Git::Index;
 
 enum Git::Repository::OpenFlag (
     GIT_REPOSITORY_OPEN_NO_SEARCH => 1 +< 0,
@@ -214,6 +215,9 @@ class Git::Repository
     sub git_commit_create(Git::Oid, Git::Repository, Str, Git::Signature,
                           Git::Signature, Str, Str, Git::Tree, size_t,
                           CArray[Git::Commit] --> int32)
+        is native('git2') {}
+
+    sub git_repository_index(Pointer is rw, Git::Repository --> int32)
         is native('git2') {}
 
     method new()
@@ -511,6 +515,13 @@ class Git::Repository
                                           !! $message,
                                 $tree, @parents.elems, @parents-array));
         nativecast(Git::Oid, $ptr)
+    }
+
+    method index(--> Git::Index)
+    {
+        my Pointer $ptr .= new;
+        check(git_repository_index($ptr, self));
+        nativecast(Git::Index, $ptr)
     }
 
     submethod DESTROY { git_repository_free(self) }

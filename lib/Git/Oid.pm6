@@ -6,9 +6,11 @@ constant \GIT_OID_HEXSZ := GIT_OID_RAWSZ * 2;
 
 class Git::Oid is repr('CStruct')
 {
-    has int64 $.b0;
-    has int64 $.b1;
-    has int32 $.b2;
+    has int32 $.b0;
+    has int32 $.b1;
+    has int32 $.b3;
+    has int32 $.b4;
+    has int32 $.b5;
 
     sub git_oid_iszero(Git::Oid --> int32)
         is native('git2') {}
