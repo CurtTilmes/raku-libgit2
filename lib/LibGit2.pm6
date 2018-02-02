@@ -2,6 +2,8 @@ use NativeCall;
 use Git::Error;
 use Git::Repository;
 use Git::Config;
+use Git::Tree;
+use Git::Object;
 
 my package EXPORT::DEFAULT {}
 BEGIN for <
@@ -12,6 +14,22 @@ BEGIN for <
     GIT_CONFIG_LEVEL_LOCAL
     GIT_CONFIG_LEVEL_APP
     GIT_CONFIG_HIGHEST_LEVEL
+
+    GIT_FILEMODE_UNREADABLE
+    GIT_FILEMODE_TREE
+    GIT_FILEMODE_BLOB
+    GIT_FILEMODE_BLOB_EXECUTABLE
+    GIT_FILEMODE_LINK
+    GIT_FILEMODE_COMMIT
+
+    GIT_OBJ_ANY
+    GIT_OBJ_BAD
+    GIT_OBJ_COMMIT
+    GIT_OBJ_TREE
+    GIT_OBJ_BLOB
+    GIT_OBJ_TAG
+    GIT_OBJ_OFS_DELTA
+    GIT_OBJ_REF_DELTA
 > { EXPORT::DEFAULT::{$_} = ::($_) }
 
 sub git_libgit2_init(--> int32) is native('git2') {}

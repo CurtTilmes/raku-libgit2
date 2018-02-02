@@ -35,5 +35,5 @@ say "listing channel";
 
 for $channel.list -> ($root, $entry)
 {
-    say "$root$entry.name()";
+    say "$root$entry.name()" if $entry.type == GIT_OBJ_BLOB
 }
