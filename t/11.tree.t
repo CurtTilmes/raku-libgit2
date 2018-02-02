@@ -11,7 +11,19 @@ ok my $repo = Git::Repository.open($test-repo-dir), 'open';
 my $builder = $repo.treebuilder;
 
 say $builder;
+my $commit = $repo.lookup('f213e199f06e017f5c0f77cb95a5e7656d0a59ec');
+my $tree = $commit.tree;
 
-#my $obj = $repo.revparse-single('HEAD:README.md');
+#my $tree = $repo.lookup('63f62cea33f976ea666c7c5679b36ff5ca9ceec8');
 
-#say $obj;
+#my $tree = $repo.lookup(Git::Oid.new('2195527d5ae4c2607be69e58292a641a979cddea'));
+
+say $tree.entrycount;
+
+for 0..^$tree.entrycount
+{
+    my $entry = $tree.entry-byindex($_);
+
+    say $entry;
+    say $repo.object($entry).id;
+}

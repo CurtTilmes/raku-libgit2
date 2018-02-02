@@ -206,6 +206,10 @@ class Git::Repository
                    --> int32)
         is native('git2') {}
 
+    sub git_tree_entry_to_object(Pointer is rw, Git::Repository,
+                                 Git::Tree::Entry --> int32)
+        is native('git2') {}
+
     method new()
     {
         my Pointer $ptr .= new;
@@ -393,7 +397,7 @@ class Git::Repository
     {
         my Pointer $ptr .= new;
         check(git_revparse_single($ptr, self, $spec));
-        nativecast(Git::Object, $ptr)
+        Git::Objectish.object($ptr)
     }
 
     method signature-default(--> Git::Signature)
@@ -428,19 +432,22 @@ class Git::Repository
     {
         my Pointer $ptr .= new;
         check(git_object_lookup($ptr, self, $oid, $type));
-        given Git::Objectish.type($ptr)
-        {
-            when GIT_OBJ_TAG    { nativecast(Git::Tag, $ptr)    }
-            when GIT_OBJ_COMMIT { nativecast(Git::Commit, $ptr) }
-            when GIT_OBJ_TREE   { nativecast(Git::Tree, $ptr)   }
-            when GIT_OBJ_BLOB   { nativecast(Git::Blob, $ptr)   }
-            default             { nativecast(Git::Object, $ptr) }
-        }
+        Git::Objectish.object($ptr)
     }
 
     multi method lookup(Git::Oid:D $oid, Str:D $type)
     {
-        self.lookup($oid, Git::Objectish.type($type))
+        samewith($oid, Git::Objectish.type($type))
+    }
+
+    multi method lookup(Str:D $oid-str, Git::Type $type = GIT_OBJ_ANY)
+    {
+        samewith(Git::Oid.new($oid-str), $type)
+    }
+
+    multi method lookup(Str:D $oid-str, Str:D $type)
+    {
+        samewith(Git::Oid.new($oid-str, Git::Objectish.type($type)))
     }
 
     method blame-file(Str $path)
@@ -471,6 +478,13 @@ class Git::Repository
     method branch-list(--> Seq)
     {
         Seq.new(Git::Branch::Iterator.new(self))
+    }
+
+    method object(Git::Tree::Entry $entry)
+    {
+        my Pointer $ptr .= new;
+        check(git_tree_entry_to_object($ptr, self, $entry));
+        Git::Objectish.object($ptr)
     }
 
     submethod DESTROY { git_repository_free(self) }

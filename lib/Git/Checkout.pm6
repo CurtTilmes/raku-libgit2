@@ -50,7 +50,7 @@ class Git::Checkout::Perfdata is repr('CStruct')
 
 class Git::Checkout::Options is repr('CStruct')
 {
-    uint32 $.version;
+    uint32 $.version = 1;
     uint32 $.checkout-strategy;
     int32  $.disable-filters;
     uint32 $.dir-mode;
@@ -70,6 +70,4 @@ class Git::Checkout::Options is repr('CStruct')
     has Str $.their-label;
     has Pointer $.perfdata-cb;
     has Pointer $.perfdata-payload;
-
-    submethod BUILD { $!version = 1 }
 }

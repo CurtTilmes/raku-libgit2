@@ -37,7 +37,7 @@ role Git::Objectish
 
     multi method type(Pointer $ptr --> Git::Type)
     {
-        Git::Type(git_object_type(nativecast(Pointer, $ptr)))
+        Git::Type(git_object_type($ptr))
     }
 
     multi method type(--> Git::Type)
@@ -68,6 +68,18 @@ role Git::Objectish
     {
         my $ptr = git_object_owner(nativecast(Pointer, self));
         nativecast(::("Git::Repository"), $ptr)
+    }
+
+    method object(Pointer:D $ptr)
+    {
+        given Git::Type(git_object_type($ptr))
+        {
+            when GIT_OBJ_TAG    { nativecast(::('Git::Tag'), $ptr)    }
+            when GIT_OBJ_COMMIT { nativecast(::('Git::Commit'), $ptr) }
+            when GIT_OBJ_TREE   { nativecast(::('Git::Tree'), $ptr)   }
+            when GIT_OBJ_BLOB   { nativecast(::('Git::Blob'), $ptr)   }
+            default             { nativecast(::('Git::Object'), $ptr) }
+        }
     }
 }
 

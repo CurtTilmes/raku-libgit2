@@ -5,6 +5,7 @@ use Git::Error;
 use Git::Oid;
 use Git::Object;
 use Git::Tree;
+use Git::Describe;
 
 class Git::Commit is repr('CPointer') does Git::Objectish
 {
@@ -99,6 +100,22 @@ class Git::Commit is repr('CPointer') does Git::Objectish
         my Pointer $ptr .= new;
         check(git_commit_nth_gen_ancestor($ptr, self, $n));
         nativecast(Git::Commit, $ptr)
+    }
+
+    sub git_describe_commit(Pointer, Git::Commit, Git::Describe::Options
+                            --> int32)
+        is native('git2') {}
+
+    method describe()
+    {
+        my Git::Describe::Options $opts .= new;
+        say $opts;
+        my Pointer $ptr .= new;
+        check(git_describe_commit($ptr, self, $opts));
+        say "ok";
+        my $result = nativecast(Git::Describe::Result, $ptr);
+        say $result;
+
     }
 
     submethod DESTROY { self.free }

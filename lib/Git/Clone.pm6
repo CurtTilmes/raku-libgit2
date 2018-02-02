@@ -11,12 +11,7 @@ enum Git::Clone::Local <
 
 class Git::Clone::Options is repr('CStruct')
 {
-    uint32 $.version;
+    uint32 $.version = 1;
     HAS Git::Checkout::Options $.checkout-opts;
-
-    submethod BUILD
-    {
-        $!version = 1;
-    }
 }
 

@@ -62,5 +62,3 @@ say $repo.reference-list;
 #$repo.tag-create('1.0', $commit);
 
 say $repo.reference-list;
-
-say Git::Objectish.type('commit');

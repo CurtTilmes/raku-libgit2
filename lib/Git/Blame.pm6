@@ -14,15 +14,13 @@ enum Git::Blame::Flag
 
 class Git::Blame::Options is repr('CStruct')
 {
-    has uint32 $.version;
+    has uint32 $.version = 1;
     has uint32 $.flags;
     has uint16 $.min_match_characters;
     HAS Git::Oid $.newest_commit;
     HAS Git::Oid $.oldest_commit;
     has size_t $.min_line;
     has size_t $.max_line;
-
-    submethod BUILD { $!version = 1 }
 }
 
 class Git::Blame::Hunk is repr('CStruct')
