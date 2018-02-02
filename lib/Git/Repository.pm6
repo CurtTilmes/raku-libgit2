@@ -13,6 +13,7 @@ use Git::TreeBuilder;
 use Git::Signature;
 use Git::Object;
 use Git::Blame;
+use Git::Message;
 
 enum Git::Repository::OpenFlag (
     GIT_REPOSITORY_OPEN_NO_SEARCH => 1 +< 0,
@@ -208,6 +209,11 @@ class Git::Repository
 
     sub git_tree_entry_to_object(Pointer is rw, Git::Repository,
                                  Git::Tree::Entry --> int32)
+        is native('git2') {}
+
+    sub git_commit_create(Git::Oid, Git::Repository, Str, Git::Signature,
+                          Git::Signature, Str, Str, Git::Tree, size_t,
+                          CArray[Git::Commit] --> int32)
         is native('git2') {}
 
     method new()
@@ -485,6 +491,26 @@ class Git::Repository
         my Pointer $ptr .= new;
         check(git_tree_entry_to_object($ptr, self, $entry));
         Git::Objectish.object($ptr)
+    }
+
+    method commit(Str:D :$update-ref = 'HEAD',
+                  Git::Signature:D :$author = !.signature-default,
+                  Git::Signature:D :$committer = $author,
+                  Str:D :$encoding =  'UTF-8',
+                  Str:D :$message!,
+                  Git::Tree:D :$tree,
+                  Bool :$prettify = False,
+                  *@parents)
+    {
+        my Pointer $ptr .= new;
+        my @parents-array := CArray[Git::Commit].new(@parents);
+
+        check(git_commit_create($ptr, self, $update-ref,
+                                $author, $committer, $encoding,
+                                $prettify ?? Git::Message.prettify($message)
+                                          !! $message,
+                                $tree, @parents.elems, @parents-array));
+        nativecast(Git::Oid, $ptr)
     }
 
     submethod DESTROY { git_repository_free(self) }

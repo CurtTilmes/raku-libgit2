@@ -73,7 +73,6 @@ class Git::Commit is repr('CPointer') does Git::Objectish
 
     method parentcount(--> uint32)
         is native('git2') is symbol('git_commit_parentcount') {}
-
     sub git_commit_parent_id(Git::Commit, uint32 --> Pointer)
         is native('git2') {}
 

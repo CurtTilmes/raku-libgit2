@@ -100,7 +100,11 @@ class Git::Tree is repr('CPointer') does Git::Objectish
 
         start
         {
-            git_tree_walk(self, $mode, &treewalk, $nonce);
+            my $ret = git_tree_walk(self, $mode, &treewalk, $nonce);
+            if $ret != 0
+            {
+                $channel.fail: X::Git.new(code => Git::ErrorCode($ret))
+            }
             $walk-channels-lock.protect: { %walk-channels{$nonce}:delete }
             $channel.close
         }

@@ -29,7 +29,7 @@ say $tree;
 #    say $repo.object($entry).id;
 #}
 
-#for $tree.walk.list -> ($root, $entry)
-#{
-#    say "$root$entry.name()" if $entry.type == GIT_OBJ_BLOB
-#}
+for $tree.walk.list -> ($root, $entry)
+{
+    say "$root$entry.name()" if $entry.type == GIT_OBJ_BLOB
+}

@@ -4,6 +4,7 @@ use Git::Repository;
 use Git::Config;
 use Git::Tree;
 use Git::Object;
+use Git::Message;
 
 my package EXPORT::DEFAULT {}
 BEGIN for <
