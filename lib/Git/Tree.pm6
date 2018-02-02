@@ -12,6 +12,11 @@ enum Git::FileMode (
     GIT_FILEMODE_COMMIT              => 0o160000,
 );
 
+enum Git::Treewalk::Mode <
+    GIT_TREEWALK_PRE
+    GIT_TREEWALK_POST
+>;
+
 class Git::Tree::Entry is repr('CPointer')
 {
     sub git_tree_entry_type(Git::Tree::Entry --> int32)
@@ -47,6 +52,15 @@ class Git::Tree::Entry is repr('CPointer')
     }
 }
 
+my %walk-channels;
+my $walk-channels-lock = Lock.new;
+
+sub treewalk(Str $root, Git::Tree::Entry $entry, int64 $nonce --> int32)
+{
+    try %walk-channels{$nonce}.send([$root, $entry]);
+    $! ?? -1 !! 0
+}
+
 class Git::Tree is repr('CPointer') does Git::Objectish
 {
     method entrycount(--> size_t)
@@ -69,6 +83,29 @@ class Git::Tree is repr('CPointer') does Git::Objectish
         my Pointer $ptr .= new;
         check(git_tree_entry_bypath($ptr, self, $path));
         nativecast(Git::Tree::Entry, $ptr)
+    }
+
+    sub git_tree_walk(Git::Tree, int32,
+                      &callback (Str, Git::Tree::Entry, int64 --> int32),
+                      int64 --> int32)
+        is native('git2') {}
+
+    method walk(Bool :$post = False, int64 :$nonce = nativecast(int64, self))
+    {
+        my $mode = $post ?? GIT_TREEWALK_POST !! GIT_TREEWALK_PRE;
+
+        my $channel = Channel.new;
+
+        $walk-channels-lock.protect: { %walk-channels{$nonce} = $channel }
+
+        start
+        {
+            git_tree_walk(self, $mode, &treewalk, $nonce);
+            $walk-channels-lock.protect: { %walk-channels{$nonce}:delete }
+            $channel.close
+        }
+
+        $channel
     }
 
     submethod DESTROY { self.free }
