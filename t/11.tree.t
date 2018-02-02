@@ -8,9 +8,6 @@ diag "Test Repo $test-repo-dir";
 
 ok my $repo = Git::Repository.open($test-repo-dir), 'open';
 
-my $builder = $repo.treebuilder;
-
-say $builder;
 my $commit = $repo.lookup('f213e199f06e017f5c0f77cb95a5e7656d0a59ec');
 my $tree = $commit.tree;
 
