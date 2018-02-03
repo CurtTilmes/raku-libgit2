@@ -21,7 +21,7 @@ say $tree;
 
 #say $tree.entrycount;
 
-#for 0..^$tree.entrycount
+#for ^$tree.entrycount
 #{
 #    my $entry = $tree.entry-byindex($_);
 #

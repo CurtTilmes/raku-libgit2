@@ -8,7 +8,7 @@ class Git::Buffer is repr('CStruct')
 
     method buf
     {
-        buf8.new($!ptr[0..^$!size])
+        buf8.new($!ptr[^$!size])
     }
 
     method str

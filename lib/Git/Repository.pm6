@@ -561,9 +561,69 @@ class Git::Repository
         $ignored == 1
     }
 
-    method status-list()
+    method status-list(Bool :$show-index-only = False,
+                       Bool :$show-workdir-only = False,
+                       Bool :$include-untracked = False,
+                       Bool :$include-ignored = False,
+                       Bool :$include-unmodified = False,
+                       Bool :$exclude-submodules = False,
+                       Bool :$recurse-untracked-dirs = False,
+                       Bool :$disable-pathspec-match = False,
+                       Bool :$recurse-ignored-dirs = False,
+                       Bool :$renames-head-to-index = False,
+                       Bool :$renames-index-to-workdir = False,
+                       Bool :$sort-case-sensitively = False,
+                       Bool :$sort-case-insensitively = False,
+                       Bool :$renames-from-rewrites = False,
+                       Bool :$no-refresh = False,
+                       Bool :$update-index = False,
+                       Bool :$include-unreadable = False,
+                       Bool :$include-unreadable-as-untracked = False,
+                       Git::Tree :$baseline)
     {
-        my Git::Status::Options $opts .= new;
+        die "Can't show only index and show only workdir"
+            if $show-index-only && $show-workdir-only;
+
+        my int32 $show = $show-index-only   ?? GIT_STATUS_SHOW_INDEX_ONLY
+                      !! $show-workdir-only ?? GIT_STATUS_SHOW_WORKDIR_ONLY
+                                            !! GIT_STATUS_SHOW_INDEX_AND_WORKDIR;
+
+        my uint32 $flags =
+            ($include-untracked
+             ?? GIT_STATUS_OPT_INCLUDE_UNTRACKED !! 0)
+         +| ($include-ignored
+             ?? GIT_STATUS_OPT_INCLUDE_IGNORED   !! 0)
+         +| ($include-unmodified
+             ?? GIT_STATUS_OPT_INCLUDE_UNMODIFIED !! 0)
+         +| ($exclude-submodules
+             ?? GIT_STATUS_OPT_EXCLUDE_SUBMODULES !! 0)
+         +| ($recurse-untracked-dirs
+             ?? GIT_STATUS_OPT_RECURSE_UNTRACKED_DIRS !! 0)
+         +| ($disable-pathspec-match
+             ?? GIT_STATUS_OPT_DISABLE_PATHSPEC_MATCH !! 0)
+         +| ($recurse-ignored-dirs
+             ?? GIT_STATUS_OPT_RECURSE_IGNORED_DIRS !! 0)
+         +| ($renames-head-to-index
+             ?? GIT_STATUS_OPT_RENAMES_HEAD_TO_INDEX !! 0)
+         +| ($renames-index-to-workdir
+             ?? GIT_STATUS_OPT_RENAMES_INDEX_TO_WORKDIR !! 0)
+         +| ($sort-case-sensitively
+             ?? GIT_STATUS_OPT_SORT_CASE_SENSITIVELY !! 0)
+         +| ($sort-case-insensitively
+             ?? GIT_STATUS_OPT_SORT_CASE_INSENSITIVELY !! 0)
+         +| ($renames-from-rewrites
+             ?? GIT_STATUS_OPT_RENAMES_FROM_REWRITES !! 0)
+         +| ($no-refresh
+             ?? GIT_STATUS_OPT_NO_REFRESH !! 0)
+         +| ($update-index
+             ?? GIT_STATUS_OPT_UPDATE_INDEX !! 0)
+         +| ($include-unreadable
+             ?? GIT_STATUS_OPT_INCLUDE_UNREADABLE !! 0)
+         +| ($include-unreadable-as-untracked
+             ?? GIT_STATUS_OPT_INCLUDE_UNREADABLE_AS_UNTRACKED !! 0);
+
+        my $opts = Git::Status::Options.new(:$show, :$flags, :$baseline);
+        say $opts;
         my Pointer $ptr .= new;
         check(git_status_list_new($ptr, self, $opts));
         nativecast(Git::Status::List, $ptr)

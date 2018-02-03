@@ -3,12 +3,11 @@ use LibGit2;
 
 my $repo = Git::Repository.open('/tmp/mine');
 
-my $status = $repo.status-list;
+my $status = $repo.status-list();
 
-say $status;
+for $status[^$status.elems]
+{
+    .status.say;
+    .say;
+}
 
-say $status.elems;
-
-my $entry = $status[0];
-
-say $entry;

@@ -56,6 +56,11 @@ class Git::Status::Options is repr('CStruct')
     has uint32        $.flags;
     HAS Git::Strarray $.pathspec;
     has Git::Tree     $.baseline;
+
+    submethod BUILD(:$!show, :$!flags, :$baseline)
+    {
+#        $!baseline := $baseline;
+    }
 }
 
 class Git::Status::Entry is repr('CStruct')
@@ -63,6 +68,11 @@ class Git::Status::Entry is repr('CStruct')
     has int32 $.status;
     has Git::Diff::Delta $.head-to-index;
     has Git::Diff::Delta $.index-to-workdir;
+
+    method status
+    {
+        set do for Git::Status::Type.enums { .key if $!status +& .value }
+    }
 }
 
 class Git::Status::List is repr('CPointer') does Positional

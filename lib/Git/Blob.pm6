@@ -25,7 +25,7 @@ class Git::Blob is repr('CPointer') does Git::Objectish
     method content
     {
         my $array = git_blob_rawcontent(self);
-        buf8.new($array[0..^$.rawsize])
+        buf8.new($array[^$.rawsize])
     }
 
     submethod DESTROY { self.free }

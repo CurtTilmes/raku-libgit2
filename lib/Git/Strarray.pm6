@@ -10,5 +10,5 @@ class Git::Strarray is repr('CStruct')
 
     submethod DESTROY { git_strarray_free(self) }
 
-    method list { $!strings[0..^$!count] }
+    method list { $!strings[^$!count] }
 }
