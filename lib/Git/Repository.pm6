@@ -623,7 +623,7 @@ class Git::Repository
          +| ($include-unreadable-as-untracked
              ?? GIT_STATUS_OPT_INCLUDE_UNREADABLE_AS_UNTRACKED !! 0);
 
-        my $pathspec = Git::Strarray.new(@pathspec);
+        my $pathspec = Git::Strarray.new(|@pathspec);
 
         my $opts = Git::Status::Options.new(:$show, :$flags, :$baseline
                                             :$pathspec);
