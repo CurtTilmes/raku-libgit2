@@ -12,7 +12,7 @@ my package EXPORT::DEFAULT {}
 
 BEGIN  # Re-export some enums defined in other modules
 {
-    for Git::Config::Level, Git::Status::Type, Git::FileMode,
+    for Git::Config::Level, Git::Status::Flags, Git::FileMode,
         Git::Type, Git::ErrorCode -> $enum
     {
         for $enum.enums

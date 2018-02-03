@@ -10,7 +10,7 @@ enum Git::Status::Show <
     GIT_STATUS_SHOW_WORKDIR_ONLY
 >;
 
-enum Git::Status::Type (
+enum Git::Status::Flags (
     GIT_STATUS_CURRENT          => 0,
 
     GIT_STATUS_INDEX_NEW        => 1 +< 0,
@@ -29,6 +29,37 @@ enum Git::Status::Type (
     GIT_STATUS_IGNORED          => 1 +< 14,
     GIT_STATUS_CONFLICTED       => 1 +< 15,
 );
+
+class Git::Status::File
+{
+    has int32 $.flags handles<Int>;
+    has Str $.path;
+
+    method is-current             { $!flags == 0 }
+
+    method is-index-new           { $!flags +& GIT_STATUS_INDEX_NEW        }
+    method is-index-modified      { $!flags +& GIT_STATUS_INDEX_MODIFIED   }
+    method is-index-deleted       { $!flags +& GIT_STATUS_INDEX_DELETED    }
+    method is-index-renamed       { $!flags +& GIT_STATUS_INDEX_RENAMED    }
+    method is-index-typechange    { $!flags +& GIT_STATUS_INDEX_TYPECHANGE }
+
+    method is-workdir-new         { $!flags +& GIT_STATUS_WT_NEW           }
+    method is-workdir-modified    { $!flags +& GIT_STATUS_WT_MODIFIED      }
+    method is-workdir-deleted     { $!flags +& GIT_STATUS_WT_DELETED       }
+    method is-workdir-typechange  { $!flags +& GIT_STATUS_WT_TYPECHANGE    }
+    method is-workdir-renamed     { $!flags +& GIT_STATUS_WT_RENAMED       }
+    method is-workdir-unreadable  { $!flags +& GIT_STATUS_WT_UNREADABLE    }
+
+    method is-ignored             { $!flags +& GIT_STATUS_IGNORED          }
+    method is-conflicted          { $!flags +& GIT_STATUS_CONFLICTED       }
+
+    method gist
+    {
+        my $status = do for Git::Status::Flags.enums
+                            { .key if $!flags +& .value };
+        "$!path = $status"
+    }
+}
 
 enum Git::Status::Opt (
     GIT_STATUS_OPT_INCLUDE_UNTRACKED                => 1 +< 0,
@@ -57,9 +88,69 @@ class Git::Status::Options is repr('CStruct')
     HAS Git::Strarray $.pathspec;
     has Git::Tree     $.baseline;
 
-    submethod BUILD(:$!show, :$!flags, Git::Strarray :$pathspec,
+    submethod BUILD(Bool :$show-index-only = False,
+                    Bool :$show-workdir-only = False,
+                    Bool :$include-untracked = False,
+                    Bool :$include-ignored = False,
+                    Bool :$include-unmodified = False,
+                    Bool :$exclude-submodules = False,
+                    Bool :$recurse-untracked-dirs = False,
+                    Bool :$disable-pathspec-match = False,
+                    Bool :$recurse-ignored-dirs = False,
+                    Bool :$renames-head-to-index = False,
+                    Bool :$renames-index-to-workdir = False,
+                    Bool :$renames = False,
+                    Bool :$sort-case-sensitively = False,
+                    Bool :$sort-case-insensitively = False,
+                    Bool :$renames-from-rewrites = False,
+                    Bool :$no-refresh = False,
+                    Bool :$update-index = False,
+                    Bool :$include-unreadable = False,
+                    Bool :$include-unreadable-as-untracked = False,
+                    Git::Strarray :$pathspec,
                     Git::Tree :$baseline)
     {
+        die "Can't show only index and show only workdir"
+            if $show-index-only && $show-workdir-only;
+
+        $!show = $show-index-only   ?? GIT_STATUS_SHOW_INDEX_ONLY
+              !! $show-workdir-only ?? GIT_STATUS_SHOW_WORKDIR_ONLY
+                                    !! GIT_STATUS_SHOW_INDEX_AND_WORKDIR;
+
+        $!flags =
+            ($include-untracked
+             ?? GIT_STATUS_OPT_INCLUDE_UNTRACKED !! 0)
+         +| ($include-ignored
+             ?? GIT_STATUS_OPT_INCLUDE_IGNORED   !! 0)
+         +| ($include-unmodified
+             ?? GIT_STATUS_OPT_INCLUDE_UNMODIFIED !! 0)
+         +| ($exclude-submodules
+             ?? GIT_STATUS_OPT_EXCLUDE_SUBMODULES !! 0)
+         +| ($recurse-untracked-dirs
+             ?? GIT_STATUS_OPT_RECURSE_UNTRACKED_DIRS !! 0)
+         +| ($disable-pathspec-match
+             ?? GIT_STATUS_OPT_DISABLE_PATHSPEC_MATCH !! 0)
+         +| ($recurse-ignored-dirs
+             ?? GIT_STATUS_OPT_RECURSE_IGNORED_DIRS !! 0)
+         +| ($renames-head-to-index || $renames
+             ?? GIT_STATUS_OPT_RENAMES_HEAD_TO_INDEX !! 0)
+         +| ($renames-index-to-workdir || $renames
+             ?? GIT_STATUS_OPT_RENAMES_INDEX_TO_WORKDIR !! 0)
+         +| ($sort-case-sensitively
+             ?? GIT_STATUS_OPT_SORT_CASE_SENSITIVELY !! 0)
+         +| ($sort-case-insensitively
+             ?? GIT_STATUS_OPT_SORT_CASE_INSENSITIVELY !! 0)
+         +| ($renames-from-rewrites || $renames
+             ?? GIT_STATUS_OPT_RENAMES_FROM_REWRITES !! 0)
+         +| ($no-refresh
+             ?? GIT_STATUS_OPT_NO_REFRESH !! 0)
+         +| ($update-index
+             ?? GIT_STATUS_OPT_UPDATE_INDEX !! 0)
+         +| ($include-unreadable
+             ?? GIT_STATUS_OPT_INCLUDE_UNREADABLE !! 0)
+         +| ($include-unreadable-as-untracked
+             ?? GIT_STATUS_OPT_INCLUDE_UNREADABLE_AS_UNTRACKED !! 0);
+
         $!pathspec := $pathspec;
         $!baseline := $baseline;
     }
@@ -67,14 +158,11 @@ class Git::Status::Options is repr('CStruct')
 
 class Git::Status::Entry is repr('CStruct')
 {
-    has int32 $.status;
+    has int32 $.flags;
     has Git::Diff::Delta $.head-to-index;
     has Git::Diff::Delta $.index-to-workdir;
 
-    method status
-    {
-        set do for Git::Status::Type.enums { .key if $!status +& .value }
-    }
+    method status { Git::Status::File.new(:$!flags) }
 }
 
 class Git::Status::List is repr('CPointer') does Positional
@@ -95,4 +183,48 @@ class Git::Status::List is repr('CPointer') does Positional
     multi method EXISTS-POS($index) { so git_status_byindex(self, $index) }
 
     submethod DESTROY { git_status_list_free(self) }
+}
+
+my %status-channels;
+my $status-channels-lock = Lock.new;
+
+sub status-callback(Str $path, uint32 $flags, int64 $nonce --> int32)
+{
+    try %status-channels{$nonce}.send(Git::Status::File.new(:$flags, :$path));
+
+    $! ?? -1 !! 0
+}
+
+class Git::Status
+{
+    sub git_status_foreach(Pointer, &callback (Str, uint32, int64 --> int32),
+                           int64 --> int32)
+        is native('git2') {}
+
+    sub git_status_foreach_ext(Pointer, Git::Status::Options,
+        &callback (Str, uint32, int64 --> int32), int64 --> int32)
+        is native('git2') {}
+
+    multi method foreach(Pointer:D $ptr, Git::Status::Options $opts?,
+                         int64 :$nonce = nativecast(int64, $ptr))
+    {
+        my $channel = Channel.new;
+
+        $status-channels-lock.protect: { %status-channels{$nonce} = $channel }
+
+        start
+        {
+            my $ret = $opts
+                ?? git_status_foreach_ext($ptr, $opts, &status-callback, $nonce)
+                !! git_status_foreach($ptr, &status-callback, $nonce);
+            if $ret != 0
+            {
+                $channel.fail: X::Git.new(code => Git::ErrorCode($ret))
+            }
+            $status-channels-lock.protect: { %status-channels{$nonce}:delete }
+            $channel.close
+        }
+
+        $channel
+    }
 }

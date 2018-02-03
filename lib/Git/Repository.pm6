@@ -561,72 +561,10 @@ class Git::Repository
         $ignored == 1
     }
 
-    method status-list(*@pathspec,
-                       Bool :$show-index-only = False,
-                       Bool :$show-workdir-only = False,
-                       Bool :$include-untracked = False,
-                       Bool :$include-ignored = False,
-                       Bool :$include-unmodified = False,
-                       Bool :$exclude-submodules = False,
-                       Bool :$recurse-untracked-dirs = False,
-                       Bool :$disable-pathspec-match = False,
-                       Bool :$recurse-ignored-dirs = False,
-                       Bool :$renames-head-to-index = False,
-                       Bool :$renames-index-to-workdir = False,
-                       Bool :$sort-case-sensitively = False,
-                       Bool :$sort-case-insensitively = False,
-                       Bool :$renames-from-rewrites = False,
-                       Bool :$no-refresh = False,
-                       Bool :$update-index = False,
-                       Bool :$include-unreadable = False,
-                       Bool :$include-unreadable-as-untracked = False,
-                       Git::Tree :$baseline)
+    method status-list(*@pathspec, |opts)
     {
-        die "Can't show only index and show only workdir"
-            if $show-index-only && $show-workdir-only;
-
-        my int32 $show = $show-index-only   ?? GIT_STATUS_SHOW_INDEX_ONLY
-                      !! $show-workdir-only ?? GIT_STATUS_SHOW_WORKDIR_ONLY
-                                            !! GIT_STATUS_SHOW_INDEX_AND_WORKDIR;
-
-        my uint32 $flags =
-            ($include-untracked
-             ?? GIT_STATUS_OPT_INCLUDE_UNTRACKED !! 0)
-         +| ($include-ignored
-             ?? GIT_STATUS_OPT_INCLUDE_IGNORED   !! 0)
-         +| ($include-unmodified
-             ?? GIT_STATUS_OPT_INCLUDE_UNMODIFIED !! 0)
-         +| ($exclude-submodules
-             ?? GIT_STATUS_OPT_EXCLUDE_SUBMODULES !! 0)
-         +| ($recurse-untracked-dirs
-             ?? GIT_STATUS_OPT_RECURSE_UNTRACKED_DIRS !! 0)
-         +| ($disable-pathspec-match
-             ?? GIT_STATUS_OPT_DISABLE_PATHSPEC_MATCH !! 0)
-         +| ($recurse-ignored-dirs
-             ?? GIT_STATUS_OPT_RECURSE_IGNORED_DIRS !! 0)
-         +| ($renames-head-to-index
-             ?? GIT_STATUS_OPT_RENAMES_HEAD_TO_INDEX !! 0)
-         +| ($renames-index-to-workdir
-             ?? GIT_STATUS_OPT_RENAMES_INDEX_TO_WORKDIR !! 0)
-         +| ($sort-case-sensitively
-             ?? GIT_STATUS_OPT_SORT_CASE_SENSITIVELY !! 0)
-         +| ($sort-case-insensitively
-             ?? GIT_STATUS_OPT_SORT_CASE_INSENSITIVELY !! 0)
-         +| ($renames-from-rewrites
-             ?? GIT_STATUS_OPT_RENAMES_FROM_REWRITES !! 0)
-         +| ($no-refresh
-             ?? GIT_STATUS_OPT_NO_REFRESH !! 0)
-         +| ($update-index
-             ?? GIT_STATUS_OPT_UPDATE_INDEX !! 0)
-         +| ($include-unreadable
-             ?? GIT_STATUS_OPT_INCLUDE_UNREADABLE !! 0)
-         +| ($include-unreadable-as-untracked
-             ?? GIT_STATUS_OPT_INCLUDE_UNREADABLE_AS_UNTRACKED !! 0);
-
-        my $pathspec = Git::Strarray.new(|@pathspec);
-
-        my $opts = Git::Status::Options.new(:$show, :$flags, :$baseline
-                                            :$pathspec);
+        my $opts = Git::Status::Options.new(
+            :pathspec(Git::Strarray.new(|@pathspec)), |opts);
 
         my Pointer $ptr .= new;
         check(git_status_list_new($ptr, self, $opts));
@@ -635,9 +573,23 @@ class Git::Repository
 
     method status-file(Str $path)
     {
-        my uint32 $status-flags = 0;
-        check(git_status_file($status-flags, self, $path));
-        set do for Git::Status::Type.enums { .key if $status-flags +& .value }
+        my uint32 $flags = 0;
+        check(git_status_file($flags, self, $path));
+        Git::Status::File.new(:$flags, :$path)
+    }
+
+    method status-each(*@pathspec, |opts)
+    {
+        if @pathspec || opts
+        {
+            my $opts = Git::Status::Options.new(
+                :pathspec(Git::Strarray.new(|@pathspec)), |opts);
+            return Git::Status.foreach(nativecast(Pointer, self), $opts)
+        }
+        else
+        {
+            return Git::Status.foreach(nativecast(Pointer, self))
+        }
     }
 
     method status-should-ignore(Str $path)
