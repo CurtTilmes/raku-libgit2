@@ -365,7 +365,7 @@ class Git::Repository
     {
         my Git::Strarray $array .= new;
         check(git_reference_list($array, self));
-        $array.list
+        $array.list(:free)
     }
 
     method tag-list(Str $pattern?)
@@ -373,14 +373,14 @@ class Git::Repository
         my Git::Strarray $array .= new;
         check($pattern ?? git_tag_list_match($array, $pattern, self)
                        !! git_tag_list($array, self));
-        $array.list
+        $array.list(:free)
     }
 
     method remote-list()
     {
         my Git::Strarray $array .= new;
         check(git_remote_list($array, self));
-        $array.list
+        $array.list(:free)
     }
 
     method remote-lookup(Str $name)
@@ -561,7 +561,8 @@ class Git::Repository
         $ignored == 1
     }
 
-    method status-list(Bool :$show-index-only = False,
+    method status-list(*@pathspec,
+                       Bool :$show-index-only = False,
                        Bool :$show-workdir-only = False,
                        Bool :$include-untracked = False,
                        Bool :$include-ignored = False,
@@ -622,8 +623,11 @@ class Git::Repository
          +| ($include-unreadable-as-untracked
              ?? GIT_STATUS_OPT_INCLUDE_UNREADABLE_AS_UNTRACKED !! 0);
 
-        my $opts = Git::Status::Options.new(:$show, :$flags, :$baseline);
-        say $opts;
+        my $pathspec = Git::Strarray.new(@pathspec);
+
+        my $opts = Git::Status::Options.new(:$show, :$flags, :$baseline
+                                            :$pathspec);
+
         my Pointer $ptr .= new;
         check(git_status_list_new($ptr, self, $opts));
         nativecast(Git::Status::List, $ptr)

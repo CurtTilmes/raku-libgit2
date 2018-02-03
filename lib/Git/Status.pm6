@@ -57,9 +57,11 @@ class Git::Status::Options is repr('CStruct')
     HAS Git::Strarray $.pathspec;
     has Git::Tree     $.baseline;
 
-    submethod BUILD(:$!show, :$!flags, :$baseline)
+    submethod BUILD(:$!show, :$!flags, Git::Strarray :$pathspec,
+                    Git::Tree :$baseline)
     {
-#        $!baseline := $baseline;
+        $!pathspec := $pathspec;
+        $!baseline := $baseline;
     }
 }
 

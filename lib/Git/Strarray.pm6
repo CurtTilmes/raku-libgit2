@@ -1,14 +1,27 @@
 use NativeCall;
 
-class Git::Strarray is repr('CStruct')
+class Git::Strarray is repr('CStruct') does Positional
 {
-    has CArray[Str] $.strings;
-    has size_t $.count;
+    has CArray[Str] $.strings handles <AT-POS>;
+    has size_t $.elems;
 
-    sub git_strarray_free(Git::Strarray)
-        is native('git2') {}
+    method free
+        is native('git2') is symbol('git_strarray_free') {}
 
-    submethod DESTROY { git_strarray_free(self) }
+    multi method new(*@list where *.elems > 0) { Git::Strarray.new(:@list) }
 
-    method list { $!strings[^$!count] }
+    multi method BUILD(:@list)
+    {
+        if @list
+        {
+            $!elems = @list.elems;
+            $!strings := CArray[Str].new(@list);
+        }
+    }
+
+    method list(:$free)
+    {
+        LEAVE self.free if $free;
+        $!strings[^$!elems]
+    }
 }
