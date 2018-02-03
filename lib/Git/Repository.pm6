@@ -15,6 +15,7 @@ use Git::Object;
 use Git::Blame;
 use Git::Message;
 use Git::Index;
+use Git::Status;
 
 enum Git::Repository::OpenFlag (
     GIT_REPOSITORY_OPEN_NO_SEARCH => 1 +< 0,
@@ -227,6 +228,16 @@ class Git::Repository
         is native('git2') {}
 
     sub git_ignore_path_is_ignored(int32 is rw, Git::Repository, Str --> int32)
+        is native('git2') {}
+
+    sub git_status_list_new(Pointer is rw, Git::Repository,
+                            Git::Status::Options --> int32)
+        is native('git2') {}
+
+    sub git_status_file(uint32 is rw, Git::Repository, Str --> int32)
+        is native('git2') {}
+
+    sub git_status_should_ignore(int32 is rw, Git::Repository, Str --> int32)
         is native('git2') {}
 
     method new()
@@ -547,6 +558,28 @@ class Git::Repository
     {
         my int32 $ignored = 0;
         check(git_ignore_path_is_ignored($ignored, self, $path));
+        $ignored == 1
+    }
+
+    method status-list()
+    {
+        my Git::Status::Options $opts .= new;
+        my Pointer $ptr .= new;
+        check(git_status_list_new($ptr, self, $opts));
+        nativecast(Git::Status::List, $ptr)
+    }
+
+    method status-file(Str $path)
+    {
+        my uint32 $status-flags = 0;
+        check(git_status_file($status-flags, self, $path));
+        set do for Git::Status::Type.enums { .key if $status-flags +& .value }
+    }
+
+    method status-should-ignore(Str $path)
+    {
+        my int32 $ignored = 0;
+        check(git_status_should_ignore($ignored, self, $path));
         $ignored == 1
     }
 
