@@ -252,6 +252,10 @@ class Git::Repository
                                    Git::Tree, Git::Diff::Options --> int32)
         is native('git2') {}
 
+    sub git_diff_tree_to_tree(Pointer is rw, Git::Repository,
+                              Git::Tree, Git::Tree, Git::Diff::Options --> int32)
+        is native('git2') {}
+
     method new()
     {
         my Pointer $ptr .= new;
@@ -637,6 +641,17 @@ class Git::Repository
         my Git::Diff::Options $opts;
         $opts .= new(|opts) if opts;
         check(git_diff_tree_to_workdir_with_index($ptr, self, $tree, $opts));
+        nativecast(Git::Diff, $ptr)
+    }
+
+    method diff-tree-to-tree(Git::Tree $old-tree,
+                             Git::Tree $new-tree,
+                             |opts)
+    {
+        my Pointer $ptr .= new;
+        my Git::Diff::Options $opts;
+        $opts .= new(|opts) if opts;
+        check(git_diff_tree_to_tree($ptr, self, $old-tree, $new-tree, $opts));
         nativecast(Git::Diff, $ptr)
     }
 

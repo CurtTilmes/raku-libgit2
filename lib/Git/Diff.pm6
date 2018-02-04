@@ -232,6 +232,81 @@ class Git::Diff::Options is repr('CStruct')
     }
 }
 
+enum Git::Diff::Find::Flags
+(
+    GIT_DIFF_FIND_BY_CONFIG                   => 0,
+    GIT_DIFF_FIND_RENAMES                     => 1 +< 0,
+    GIT_DIFF_FIND_RENAMES_FROM_REWRITES       => 1 +< 1,
+    GIT_DIFF_FIND_COPIES                      => 1 +< 2,
+    GIT_DIFF_FIND_COPIES_FROM_UNMODIFIED      => 1 +< 3,
+    GIT_DIFF_FIND_REWRITES                    => 1 +< 4,
+    GIT_DIFF_BREAK_REWRITES                   => 1 +< 5,
+    GIT_DIFF_FIND_AND_BREAK_REWRITES          => (1 +< 4 +| 1 +< 5),
+    GIT_DIFF_FIND_FOR_UNTRACKED               => 1 +< 6,
+    GIT_DIFF_FIND_ALL                         => 0x0ff,
+#    GIT_DIFF_FIND_IGNORE_LEADING_WHITESPACE  => 0,
+    GIT_DIFF_FIND_IGNORE_WHITESPACE           => 1 +< 12,
+    GIT_DIFF_FIND_DONT_IGNORE_WHITESPACE      => 1 +< 13,
+    GIT_DIFF_FIND_EXACT_MATCH_ONLY            => 1 +< 14,
+    GIT_DIFF_BREAK_REWRITES_FOR_RENAMES_ONLY  => 1 +< 15,
+    GIT_DIFF_FIND_REMOVE_UNMODIFIED           => 1 +< 16,
+);
+
+class Git::Diff::Find::Options is repr('CStruct')
+{
+    has uint32 $.version = 1;
+    has uint32 $.flags;
+    has uint16 $.rename-threshold;
+    has uint16 $.rename-from-rewrite-threshold;
+    has uint16 $.break-rewrite-threshold;
+    has size_t $.rename-limit;
+    has Pointer $.similarity-metric;
+
+    submethod BUILD(Bool :$renames,
+                    Bool :$renames-from-rewrites,
+                    Bool :$copies,
+                    Bool :$copies-from-unmodified,
+                    Bool :$rewrites,
+                    Bool :$break-rewrites,
+                    Bool :$find-and-break-rewrites,
+                    Bool :$untracked,
+                    Bool :$all,
+                    Bool :$ignore-whitespace,
+                    Bool :$don't-ignore-whitespace,
+                    Bool :$exact-match-only,
+                    Bool :$break-rewrites-for-renames-only,
+                    Bool :$remove-unmodified)
+    {
+        $!flags =
+            ($renames
+                ?? GIT_DIFF_FIND_RENAMES !! 0)
+            +| ($renames-from-rewrites
+                ?? GIT_DIFF_FIND_RENAMES_FROM_REWRITES !! 0)
+            +| ($copies
+                ?? GIT_DIFF_FIND_COPIES !! 0)
+            +| ($copies-from-unmodified
+                ?? GIT_DIFF_FIND_COPIES_FROM_UNMODIFIED !! 0)
+            +| (($rewrites || $find-and-break-rewrites)
+                ?? GIT_DIFF_FIND_REWRITES !! 0)
+            +| (($break-rewrites || $find-and-break-rewrites)
+                ?? GIT_DIFF_BREAK_REWRITES !! 0)
+            +| ($untracked
+                ?? GIT_DIFF_FIND_FOR_UNTRACKED !! 0)
+            +| ($all
+                ?? GIT_DIFF_FIND_ALL !! 0)
+            +| ($ignore-whitespace
+                ?? GIT_DIFF_FIND_IGNORE_WHITESPACE !! 0)
+            +| ($don't-ignore-whitespace
+                ?? GIT_DIFF_FIND_DONT_IGNORE_WHITESPACE !! 0)
+            +| ($exact-match-only
+                ?? GIT_DIFF_FIND_EXACT_MATCH_ONLY !! 0)
+            +| ($break-rewrites-for-renames-only
+                ?? GIT_DIFF_BREAK_REWRITES_FOR_RENAMES_ONLY !! 0)
+            +| ($remove-unmodified
+                ?? GIT_DIFF_FIND_REMOVE_UNMODIFIED !! 0);
+    }
+}
+
 enum Git::Diff::Format::Email::Flags (
     GIT_DIFF_FORMAT_EMAIL_NONE                         => 0,
     GIT_DIFF_FORMAT_EMAIL_EXCLUDE_SUBJECT_PATCH_MARKER => 1 +< 0,
@@ -297,6 +372,17 @@ class Git::Diff
 
     method delta(size_t $idx --> Git::Diff::Delta)
         is native('git2') is symbol('git_diff_get_delta') {}
+
+    sub git_diff_find_similar(Git::Diff, Git::Diff::Find::Options --> int32)
+        is native('git2') {}
+
+    method find-similar(|opts)
+    {
+        my Git::Diff::Find::Options $opts;
+        $opts .= new(|opts) if opts;
+        check(git_diff_find_similar(self, $opts));
+    }
+
 
     submethod DESTROY { git_diff_free(self) }
 }

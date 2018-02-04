@@ -9,3 +9,7 @@ my $tree = $repo.revparse-single('HEAD^{tree}');
 my $diff = $repo.diff-tree-to-workdir-with-index(:$tree);
 
 say $diff.delta($_) for ^$diff.num-deltas;
+
+$diff.find-similar(:renames, :copies, :untracked);
+
+say $diff.delta($_) for ^$diff.num-deltas;
