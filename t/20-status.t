@@ -3,7 +3,7 @@ use LibGit2;
 
 my $repo = Git::Repository.open('/tmp/mine');
 
-my $status = $repo.status-list('README.md');
+my $status = $repo.status-list;
 
 for $status[^$status.elems]
 {

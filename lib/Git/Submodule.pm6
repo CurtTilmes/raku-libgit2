@@ -7,3 +7,6 @@ enum Git::Submodule::Ignore (
     GIT_SUBMODULE_IGNORE_DIRTY        => 3,
     GIT_SUBMODULE_IGNORE_ALL          => 4,
 );
+
+subset Git::Submodule::Ignore::Str of Str
+    where .uc ~~ 'UNSPECIFIED'|'NONE'|'UNTRACKED'|'DIRTY'|'ALL';
