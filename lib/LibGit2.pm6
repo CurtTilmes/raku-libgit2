@@ -7,6 +7,7 @@ use Git::Object;
 use Git::Message;
 use Git::Index;
 use Git::Status;
+use Git::FileMode;
 
 my package EXPORT::DEFAULT {}
 

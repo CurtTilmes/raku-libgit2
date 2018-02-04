@@ -1,5 +1,8 @@
 use NativeCall;
 use Git::Oid;
+use Git::FileMode;
+use Git::Submodule;
+use Git::Strarray;
 
 enum Git::Diff::Option (
     GIT_DIFF_NORMAL                          => 0,
@@ -73,6 +76,14 @@ class Git::Diff::Delta is repr('CStruct')
     has uint16 $.nfiles;
     HAS Git::Diff::File $.old-file;
     HAS Git::Diff::File $.new-file;
+}
+
+class Git::Diff::Options is repr('CStruct')
+{
+    has int32 $.version = 1;
+    has uint32 $.flags = 0;
+    has int32 $.ignore-submodules = GIT_SUBMODULE_IGNORE_UNSPECIFIED;
+    HAS Git::Strarray $.pathspec;
 }
 
 class Git::Diff is repr('CPointer')

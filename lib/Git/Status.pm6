@@ -55,9 +55,10 @@ class Git::Status::File
 
     method gist
     {
-        my $status = do for Git::Status::Flags.enums
-                            { .key if $!flags +& .value };
-        "$!path = $status"
+        ($!path ?? "$!path = " !! '') ~
+            ($!flags ?? do for Git::Status::Flags.enums
+                           { .key if $!flags +& .value }
+                     !! GIT_STATUS_CURRENT)
     }
 }
 
