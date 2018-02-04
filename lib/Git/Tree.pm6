@@ -3,6 +3,7 @@ use Git::Error;
 use Git::Object;
 use Git::Oid;
 use Git::FileMode;
+use Git::Channel;
 
 enum Git::Treewalk::Mode <
     GIT_TREEWALK_PRE
@@ -44,12 +45,9 @@ class Git::Tree::Entry is repr('CPointer')
     }
 }
 
-my %walk-channels;
-my $walk-channels-lock = Lock.new;
-
 sub treewalk(Str $root, Git::Tree::Entry $entry, int64 $nonce --> int32)
 {
-    try %walk-channels{$nonce}.send([$root, $entry]);
+    try Git::Channel.channel($nonce).send([$root, $entry]);
     $! ?? -1 !! 0
 }
 
@@ -82,23 +80,18 @@ class Git::Tree is repr('CPointer') does Git::Objectish
                       int64 --> int32)
         is native('git2') {}
 
-    method walk(Bool :$post = False, int64 :$nonce = nativecast(int64, self))
+    method walk(Bool :$post = False)
     {
         my $mode = $post ?? GIT_TREEWALK_POST !! GIT_TREEWALK_PRE;
 
-        my $channel = Channel.new;
-
-        $walk-channels-lock.protect: { %walk-channels{$nonce} = $channel }
+        my $channel = Git::Channel.new;
 
         start
         {
-            my $ret = git_tree_walk(self, $mode, &treewalk, $nonce);
-            if $ret != 0
-            {
-                $channel.fail: X::Git.new(code => Git::ErrorCode($ret))
-            }
-            $walk-channels-lock.protect: { %walk-channels{$nonce}:delete }
-            $channel.close
+            my $ret = git_tree_walk(self, $mode, &treewalk, $channel.Int);
+            $channel.fail(X::Git.new(code => Git::ErrorCode($ret)))
+                unless $ret == 0;
+            Git::Channel.done($channel.Int)
         }
 
         $channel

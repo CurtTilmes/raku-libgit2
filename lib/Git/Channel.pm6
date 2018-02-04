@@ -3,25 +3,24 @@ use NativeCall;
 class Git::Channel
 {
     my %channels;
-    my int64 $i = 0;
+    my Int $i = 0;
     my $lock = Lock.new;
 
-    method id
+    method new
     {
         my $channel = Channel.new;
-        my int64 $id;
-        $lock.protect: { %channels{$index = $i++} = $channel }
-        $id
+        my Int $id;
+        $lock.protect: { %channels{$id = $i++} = $channel }
+        $channel but $id
     }
 
-    method channel(int64 $id)
+    method channel(Int $id)
     {
         %channels{$id}
     }
 
-    method done(int64 $id)
+    method done(Int $id)
     {
-        $.channel.close;
-        $lock.protect: { %channels{$id}:delete }
+        $lock.protect: { %channels{$id}:delete.close }
     }
 }

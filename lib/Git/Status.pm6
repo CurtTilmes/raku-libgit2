@@ -192,12 +192,9 @@ class Git::Status::List is repr('CPointer') does Positional
     submethod DESTROY { git_status_list_free(self) }
 }
 
-my %status-channels;
-my $status-channels-lock = Lock.new;
-
 sub status-callback(Str $path, uint32 $flags, int64 $nonce --> int32)
 {
-    try %status-channels{$nonce}.send(Git::Status::File.new(:$flags, :$path));
+    try Git::Channel.channel($nonce).send(Git::Status::File.new(:$flags,:$path));
 
     $! ?? -1 !! 0
 }
@@ -215,21 +212,19 @@ class Git::Status
     multi method foreach(Pointer:D $ptr, Git::Status::Options $opts?,
                          int64 :$nonce = nativecast(int64, $ptr))
     {
-        my $channel = Channel.new;
-
-        $status-channels-lock.protect: { %status-channels{$nonce} = $channel }
+        my $channel = Git::Channel.new;
 
         start
         {
             my $ret = $opts
-                ?? git_status_foreach_ext($ptr, $opts, &status-callback, $nonce)
-                !! git_status_foreach($ptr, &status-callback, $nonce);
+                ?? git_status_foreach_ext($ptr, $opts, &status-callback,
+                                          $channel.Int)
+                !! git_status_foreach($ptr, &status-callback, $channel.Int);
             if $ret != 0
             {
                 $channel.fail: X::Git.new(code => Git::ErrorCode($ret))
             }
-            $status-channels-lock.protect: { %status-channels{$nonce}:delete }
-            $channel.close
+            Git::Channel.done($channel.Int)
         }
 
         $channel
