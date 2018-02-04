@@ -244,6 +244,14 @@ class Git::Repository
                                   Git::Diff::Options --> int32)
         is native('git2') {}
 
+    sub git_diff_tree_to_index(Pointer is rw, Git::Repository, Git::Tree,
+                               Git::Index, Git::Diff::Options --> int32)
+        is native('git2') {}
+
+    sub git_diff_tree_to_workdir_with_index(Pointer is rw, Git::Repository,
+                                   Git::Tree, Git::Diff::Options --> int32)
+        is native('git2') {}
+
     method new()
     {
         my Pointer $ptr .= new;
@@ -603,12 +611,32 @@ class Git::Repository
         $ignored == 1
     }
 
-    method diff-index-to-workdir(Git::Index $index?, |opts)
+    method diff-index-to-workdir(Git::Index :$index, |opts)
     {
         my Pointer $ptr .= new;
         my Git::Diff::Options $opts;
         $opts .= new(|opts) if opts;
         check(git_diff_index_to_workdir($ptr, self, $index, $opts));
+        nativecast(Git::Diff, $ptr)
+    }
+
+    method diff-tree-to-index(Git::Tree :$tree,
+                              Git::Index :$index,
+                              |opts)
+    {
+        my Pointer $ptr .= new;
+        my Git::Diff::Options $opts;
+        $opts .= new(|opts) if opts;
+        check(git_diff_tree_to_index($ptr, self, $tree, $index, $opts));
+        nativecast(Git::Diff, $ptr)
+    }
+
+    method diff-tree-to-workdir-with-index(Git::Tree :$tree, |opts)
+    {
+        my Pointer $ptr .= new;
+        my Git::Diff::Options $opts;
+        $opts .= new(|opts) if opts;
+        check(git_diff_tree_to_workdir_with_index($ptr, self, $tree, $opts));
         nativecast(Git::Diff, $ptr)
     }
 

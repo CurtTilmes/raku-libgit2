@@ -17,5 +17,13 @@ class Git::Patch is repr('CPointer')
         $buf.str
     }
 
+    sub git_patch_get_delta(Git::Patch --> Pointer)
+        is native('git2') {}
+
+    method delta
+    {
+        nativecast(::('Git::Diff::Delta'), git_patch_get_delta(self))
+    }
+
     submethod DESTROY { git_patch_free(self) }
 }

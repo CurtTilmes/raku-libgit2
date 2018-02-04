@@ -48,6 +48,26 @@ enum Git::Diff::Flag (
     GIT_DIFF_FLAG_EXISTS     => 1 +< 3,
 );
 
+class Git::Diff::Flag::Type
+{
+    has uint32 $.flags handles<Int>;
+
+    method is-binary   { $!flags +& GIT_DIFF_FLAG_BINARY }
+    method is-text     { $!flags +& GIT_DIFF_FLAG_NOT_BINARY }
+    method is-valid-id { $!flags +& GIT_DIFF_FLAG_VALID_ID }
+    method exists      { $!flags +& GIT_DIFF_FLAG_EXISTS }
+
+    method all
+    {
+        do for Git::Diff::Flag.enums
+        {
+            Git::Diff::Flag(.value) if $!flags +& .value
+        }
+    }
+
+    method gist { ~.all with self }
+}
+
 enum Git::Delta::Type <
     GIT_DELTA_UNMODIFIED
     GIT_DELTA_ADDED
@@ -65,11 +85,13 @@ enum Git::Delta::Type <
 class Git::Diff::File is repr('CStruct')
 {
     HAS Git::Oid $.id;
-    has Str $.path;
+    has Str $.path handles <gist Str>;
     has int64 $.size;
     has uint32 $.flags;
     has uint16 $.mode;
     has uint16 $.id-abbrev;
+
+    method flags { Git::Diff::Flag::Type.new(:$!flags) }
 }
 
 class Git::Diff::Delta is repr('CStruct')
@@ -80,6 +102,15 @@ class Git::Diff::Delta is repr('CStruct')
     has uint16 $.nfiles;
     HAS Git::Diff::File $.old-file;
     HAS Git::Diff::File $.new-file;
+
+    method status { Git::Delta::Type($!status) }
+
+    method flags { Git::Diff::Flag::Type.new(:$!flags) }
+
+    method gist
+    {
+        "$.status() ({$!old-file // ''},{$!new-file // ''})"
+    }
 }
 
 class Git::Diff is repr('CPointer') {...}
@@ -263,6 +294,9 @@ class Git::Diff
         check(git_patch_from_diff($ptr, self, $idx));
         nativecast(Git::Patch, $ptr)
     }
+
+    method delta(size_t $idx --> Git::Diff::Delta)
+        is native('git2') is symbol('git_diff_get_delta') {}
 
     submethod DESTROY { git_diff_free(self) }
 }

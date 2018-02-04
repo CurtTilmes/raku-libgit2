@@ -53,12 +53,18 @@ class Git::Status::File
     method is-ignored             { $!flags +& GIT_STATUS_IGNORED          }
     method is-conflicted          { $!flags +& GIT_STATUS_CONFLICTED       }
 
+    method status
+    {
+        return (GIT_STATUS_CURRENT,) unless $!flags;
+        do for Git::Status::Flags.enums
+        {
+            Git::Status::Flags(.value) if $!flags +& .value
+        }
+    }
+
     method gist
     {
-        ($!path ?? "$!path = " !! '') ~
-            ($!flags ?? do for Git::Status::Flags.enums
-                           { .key if $!flags +& .value }
-                     !! GIT_STATUS_CURRENT)
+        ($!path ?? "$!path = " !! '') ~ $.status
     }
 }
 

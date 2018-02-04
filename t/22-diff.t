@@ -1,12 +1,11 @@
 use Test;
 use LibGit2;
+use Git::Status;
 
 my $repo = Git::Repository.open('/tmp/mine');
 
-my $diff = $repo.diff-index-to-workdir;
+my $tree = $repo.revparse-single('HEAD^{tree}');
 
-say $diff.num-deltas;
+my $diff = $repo.diff-tree-to-workdir-with-index(:$tree);
 
-my $patch = $diff.patch(0);
-
-say $patch.Str;
+say $diff.delta($_) for ^$diff.num-deltas;
