@@ -1,8 +1,12 @@
 use NativeCall;
+use Git::Error;
 use Git::Oid;
 use Git::FileMode;
 use Git::Submodule;
 use Git::Strarray;
+use Git::Buffer;
+use Git::Signature;
+use Git::Patch;
 
 enum Git::Diff::Option (
     GIT_DIFF_NORMAL                          => 0,
@@ -197,10 +201,68 @@ class Git::Diff::Options is repr('CStruct')
     }
 }
 
+enum Git::Diff::Format::Email::Flags (
+    GIT_DIFF_FORMAT_EMAIL_NONE                         => 0,
+    GIT_DIFF_FORMAT_EMAIL_EXCLUDE_SUBJECT_PATCH_MARKER => 1 +< 0,
+);
+
+class Git::Diff::Format::Email::Options is repr('CStruct')
+{
+    has uint32 $.version = 1;
+    has int32 $.flags;
+    has size_t $.patch-no;
+    has size_t $.total-patches;
+    has Git::Oid $.id;
+    has Str $.summary;
+    has Str $.body;
+    has Git::Signature $.author;
+
+    submethod BUILD(Bool :$exclude-subject-patch-marker,
+                    size_t :$!patch-no = 1,
+                    size_t :$!total-patches = 1,
+                    Git::Oid :$id,
+                    Str :$summary,
+                    Str :$body,
+                    Git::Signature :$author)
+    {
+        $!flags = GIT_DIFF_FORMAT_EMAIL_EXCLUDE_SUBJECT_PATCH_MARKER
+            if $exclude-subject-patch-marker;
+        $!id := $id;
+        $!summary := $summary;
+        $!body := $body;
+        $!author := $author;
+    }
+}
+
 class Git::Diff
 {
     sub git_diff_free(Git::Diff)
         is native('git2') {}
+
+    sub git_diff_format_email(Git::Buffer, Git::Diff,
+                              Git::Diff::Format::Email::Options --> int32)
+        is native('git2') {}
+
+    method format-email()
+    {
+        my Git::Buffer $buf .= new;
+        my Git::Diff::Format::Email::Options $opts .= new;
+        check(git_diff_format_email($buf, self, $opts));
+        $buf.str
+    }
+
+    method num-deltas(--> size_t)
+        is native('git2') is symbol('git_diff_num_deltas') {}
+
+    sub git_patch_from_diff(Pointer is rw, Git::Diff, size_t --> int32)
+        is native('git2') {}
+
+    method patch(size_t $idx)
+    {
+        my Pointer $ptr .= new;
+        check(git_patch_from_diff($ptr, self, $idx));
+        nativecast(Git::Patch, $ptr)
+    }
 
     submethod DESTROY { git_diff_free(self) }
 }

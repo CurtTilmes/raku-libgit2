@@ -1,8 +1,12 @@
 use Test;
 use LibGit2;
-use Git::Submodule;
 
-my $opts = Git::Diff::Options.new(:indent-heuristic, :context-lines(5)
-:interhunk-lines(5), old-prefix => 'old', new-prefix => 'new');
+my $repo = Git::Repository.open('/tmp/mine');
 
-say $opts;
+my $diff = $repo.diff-index-to-workdir;
+
+say $diff.num-deltas;
+
+my $patch = $diff.patch(0);
+
+say $patch.Str;

@@ -240,6 +240,10 @@ class Git::Repository
     sub git_status_should_ignore(int32 is rw, Git::Repository, Str --> int32)
         is native('git2') {}
 
+    sub git_diff_index_to_workdir(Pointer is rw, Git::Repository, Git::Index,
+                                  Git::Diff::Options --> int32)
+        is native('git2') {}
+
     method new()
     {
         my Pointer $ptr .= new;
@@ -597,6 +601,15 @@ class Git::Repository
         my int32 $ignored = 0;
         check(git_status_should_ignore($ignored, self, $path));
         $ignored == 1
+    }
+
+    method diff-index-to-workdir(Git::Index $index?, |opts)
+    {
+        my Pointer $ptr .= new;
+        my Git::Diff::Options $opts;
+        $opts .= new(|opts) if opts;
+        check(git_diff_index_to_workdir($ptr, self, $index, $opts));
+        nativecast(Git::Diff, $ptr)
     }
 
     submethod DESTROY { git_repository_free(self) }
