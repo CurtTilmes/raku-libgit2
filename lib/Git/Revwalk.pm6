@@ -55,6 +55,7 @@ class Git::Revwalk
             when Git::Glob    { check(git_revwalk_hide_glob(self, $_)) }
             default           { check(git_revwalk_hide_ref(self, $_))  }
         }
+        self
     }
 
     sub git_revwalk_push(Git::Revwalk, Git::Oid --> int32)
@@ -79,6 +80,7 @@ class Git::Revwalk
             when Git::Range   { check(git_revwalk_push_range(self, $_)) }
             default           { check(git_revwalk_push_ref(self, $_)) }
         }
+        self
     }
 
     method simplify-first-parent()
@@ -94,7 +96,8 @@ class Git::Revwalk
             +| ($time        ?? GIT_SORT_TIME        !! 0)
             +| ($reverse     ?? GIT_SORT_REVERSE     !! 0);
 
-        git_revwalk_sorting(self, $sorting)
+        git_revwalk_sorting(self, $sorting);
+        self
     }
 
     method reset()
@@ -108,8 +111,11 @@ class Git::Revwalk
         nativecast(::('Git::Repository'), git_revwalk_repository(self))
     }
 
-    method walk
+    method walk(:$push, :$hide, Bool :$simplify-first-parent)
     {
+        self.push(|$push) if $push;
+        self.hide(|$hide) if $hide;
+        self.simplify-first-parent if $simplify-first-parent;
         Seq.new(Git::Revwalk::Iterator.new(revwalk => self))
     }
 

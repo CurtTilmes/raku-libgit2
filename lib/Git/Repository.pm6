@@ -659,7 +659,7 @@ class Git::Repository
         nativecast(Git::Diff, $ptr)
     }
 
-    method revwalk(--> Git::Revwalk)
+    method revwalk
     {
         my Pointer $ptr .= new;
         check(git_revwalk_new($ptr, self));
