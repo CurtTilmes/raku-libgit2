@@ -27,7 +27,6 @@ enum Git::Checkout::Strategy (
     GIT_CHECKOUT_CONFLICT_STYLE_DIFF3         = 1 +< 21,
     GIT_CHECKOUT_DONT_REMOVE_EXISTING         = 1 +< 22,
     GIT_CHECKOUT_DONT_WRITE_INDEX             = 1 +< 23,
-
 );
 
 enum Git::Checkout::Notify (
@@ -70,4 +69,66 @@ class Git::Checkout::Options is repr('CStruct')
     has Str $.their-label;
     has Pointer $.perfdata-cb;
     has Pointer $.perfdata-payload;
+
+    submethod BUILD(Bool :$safe,
+                    Bool :$force,
+                    Bool :$recreate-missing,
+                    Bool :$allow-conflicts,
+                    Bool :$remove-untracked,
+                    Bool :$remove-ignored,
+                    Bool :$update-only,
+                    Bool :$don't-update-index,
+                    Bool :$no-refresh,
+                    Bool :$skip-unmerged,
+                    Bool :$use-ours,
+                    Bool :$use-theirs,
+                    Bool :$disable-pathspec-match,
+                    Bool :$skip-locked-directories,
+                    Bool :$don't-overwrite-ignored,
+                    Bool :$conflict-style-merge,
+                    Bool :$conflict-style-diff3,
+                    Bool :$don't-remove-existing,
+                    Bool :$don't-write-index,
+                    )
+    {
+        $!checkout-strategy =
+               ($safe
+                ?? GIT_CHECKOUT_SAFE || 0)
+            +| ($force
+                ?? GIT_CHECKOUT_FORCE || 0)
+            +| ($recreate-missing
+                ?? GIT_CHECKOUT_RECREATE_MISSING || 0)
+            +| ($allow-conflicts
+                ?? GIT_CHECKOUT_ALLOW_CONFLICTS || 0)
+            +| ($remove-untracked
+                ?? GIT_CHECKOUT_REMOVE_UNTRACKED || 0)
+            +| ($remove-ignored
+                ?? GIT_CHECKOUT_REMOVE_IGNORED || 0)
+            +| ($update-only
+                ?? GIT_CHECKOUT_UPDATE_ONLY || 0)
+            +| ($don't-update-index
+                ?? GIT_CHECKOUT_DONT_UPDATE_INDEX || 0)
+            +| ($no-refresh
+                ?? GIT_CHECKOUT_NO_REFRESH || 0)
+            +| ($skip-unmerged
+                ?? GIT_CHECKOUT_SKIP_UNMERGED || 0)
+            +| ($use-ours
+                ?? GIT_CHECKOUT_USE_OURS || 0)
+            +| ($use-theirs
+                ?? GIT_CHECKOUT_USE_THEIRS || 0)
+            +| ($disable-pathspec-match
+                ?? GIT_CHECKOUT_DISABLE_PATHSPEC_MATCH || 0)
+            +| ($skip-locked-directories
+                ?? GIT_CHECKOUT_SKIP_LOCKED_DIRECTORIES || 0)
+            +| ($don't-overwrite-ignored
+                ?? GIT_CHECKOUT_DONT_OVERWRITE_IGNORED || 0)
+            +| ($conflict-style-merge
+                ?? GIT_CHECKOUT_CONFLICT_STYLE_MERGE || 0)
+            +| ($conflict-style-diff3
+                ?? GIT_CHECKOUT_CONFLICT_STYLE_DIFF3 || 0)
+            +| ($don't-remove-existing
+                ?? GIT_CHECKOUT_DONT_REMOVE_EXISTING || 0)
+            +| ($don't-write-index
+                ?? GIT_CHECKOUT_DONT_WRITE_INDEX || 0);
+    }
 }
