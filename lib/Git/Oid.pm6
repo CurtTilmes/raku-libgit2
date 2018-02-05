@@ -4,6 +4,8 @@ use Git::Error;
 constant \GIT_OID_RAWSZ := 20;
 constant \GIT_OID_HEXSZ := GIT_OID_RAWSZ * 2;
 
+subset Git::Oidlike of Str where /^<xdigit>**20$/;
+
 class Git::Oid is repr('CStruct')
 {
     has int32 $.b0;

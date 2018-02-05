@@ -16,6 +16,7 @@ use Git::Blame;
 use Git::Message;
 use Git::Index;
 use Git::Status;
+use Git::Revwalk;
 
 enum Git::Repository::OpenFlag (
     GIT_REPOSITORY_OPEN_NO_SEARCH => 1 +< 0,
@@ -254,6 +255,9 @@ class Git::Repository
 
     sub git_diff_tree_to_tree(Pointer is rw, Git::Repository,
                               Git::Tree, Git::Tree, Git::Diff::Options --> int32)
+        is native('git2') {}
+
+    sub git_revwalk_new(Pointer is rw, Git::Repository --> int32)
         is native('git2') {}
 
     method new()
@@ -653,6 +657,13 @@ class Git::Repository
         $opts .= new(|opts) if opts;
         check(git_diff_tree_to_tree($ptr, self, $old-tree, $new-tree, $opts));
         nativecast(Git::Diff, $ptr)
+    }
+
+    method revwalk(--> Git::Revwalk)
+    {
+        my Pointer $ptr .= new;
+        check(git_revwalk_new($ptr, self));
+        nativecast(Git::Revwalk, $ptr)
     }
 
     submethod DESTROY { git_repository_free(self) }
