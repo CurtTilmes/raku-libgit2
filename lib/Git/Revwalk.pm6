@@ -8,12 +8,31 @@ subset Git::Range of Str where /'..'/;
 enum Git::Sort
 (
     GIT_SORT_NONE        => 0,
-    GIT_SORT_TOPOLOGICAL => 1 << 0,
-    GIT_SORT_TIME        => 1 << 1,
-    GIT_SORT_REVERSE     => 1 << 2,
+    GIT_SORT_TOPOLOGICAL => 1 +< 0,
+    GIT_SORT_TIME        => 1 +< 1,
+    GIT_SORT_REVERSE     => 1 +< 2,
 );
 
-class Git::Revwalk is repr('CPointer')
+class Git::Revwalk is repr('CPointer') {...}
+
+class Git::Revwalk::Iterator does Iterator
+{
+    has Git::Revwalk $.revwalk;
+    has Git::Oid $.oid = Git::Oid.new;
+
+    sub git_revwalk_next(Git::Oid, Git::Revwalk --> int32)
+        is native('git2') {}
+
+    method pull-one
+    {
+        my $ret = git_revwalk_next($!oid, $!revwalk);
+        return IterationEnd if $ret == GIT_ITEROVER;
+        check($ret);
+        $!oid
+    }
+}
+
+class Git::Revwalk
 {
     sub git_revwalk_free(Git::Revwalk)
         is native('git2') {}
@@ -58,12 +77,12 @@ class Git::Revwalk is repr('CPointer')
             when Git::Oidlike { check(git_revwalk_push(self, Git::Oid.new($_))) }
             when Git::Glob    { check(git_revwalk_push_glob($_)) }
             when Git::Range   { check(git_revwalk_push_range(self, $_)) }
-            default           { check(git_revwalk_push_ref($_)) }
+            default           { check(git_revwalk_push_ref(self, $_)) }
         }
     }
 
     method simplify-first-parent()
-        is native('git2') is symbol('git-revwalk_simplify_first_parent') {}
+        is native('git2') is symbol('git_revwalk_simplify_first_parent') {}
 
     sub git_revwalk_sorting(Git::Revwalk, uint32)
         is native('git2') {}
@@ -87,6 +106,11 @@ class Git::Revwalk is repr('CPointer')
     method repository()
     {
         nativecast(::('Git::Repository'), git_revwalk_repository(self))
+    }
+
+    method walk
+    {
+        Seq.new(Git::Revwalk::Iterator.new(revwalk => self))
     }
 
     submethod DESTROY { git_revwalk_free(self) }

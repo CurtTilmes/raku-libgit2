@@ -4,7 +4,7 @@ use Git::Error;
 constant \GIT_OID_RAWSZ := 20;
 constant \GIT_OID_HEXSZ := GIT_OID_RAWSZ * 2;
 
-subset Git::Oidlike of Str where /^<xdigit>**20$/;
+subset Git::Oidlike of Str where /^<xdigit>**{GIT_OID_HEXSZ}$/;
 
 class Git::Oid is repr('CStruct')
 {
