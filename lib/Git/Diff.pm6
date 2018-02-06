@@ -340,6 +340,46 @@ class Git::Diff::Format::Email::Options is repr('CStruct')
     }
 }
 
+class Git::Diff::Hunk is repr('CStruct')
+{
+    has int32 $.old-start;
+    has int32 $.old-lines;
+    has int32 $.new-start;
+    has int32 $.new-lines;
+    has size_t $.header-len;
+    # 128 bytes of "header" here
+
+    method header
+    {
+        nativecast(Str, Pointer.new(nativecast(Pointer, self)
+                                    + nativesizeof(Git::Diff::Hunk)))
+    }
+}
+
+enum Git::Diff::Line::Type
+(
+    GIT_DIFF_LINE_CONTEXT       => ' ',
+    GIT_DIFF_LINE_ADDITION      => '+',
+    GIT_DIFF_LINE_DELETION      => '-',
+    GIT_DIFF_LINE_CONTEXT_EOFNL => '=',
+    GIT_DIFF_LINE_ADD_EOFNL     => '>',
+    GIT_DIFF_LINE_DEL_EOFNL     => '<',
+    GIT_DIFF_LINE_FILE_HDR      => 'F',
+    GIT_DIFF_LINE_HUNK_HDR      => 'H',
+    GIT_DIFF_LINE_BINARY        => 'B',
+);
+
+class Git::Diff::Line is repr('CStruct')
+{
+    has uint8 $.origin;
+    has int32 $.old-lineno;
+    has int32 $.new-lineno;
+    has int32 $.num-lines;
+    has size_t $.content-len;
+    has int64 $.content-offset;
+    has Str $.content;
+}
+
 class Git::Diff
 {
     sub git_diff_free(Git::Diff)
@@ -357,7 +397,7 @@ class Git::Diff
         $buf.str
     }
 
-    method num-deltas(--> size_t)
+    method elems(--> size_t)
         is native('git2') is symbol('git_diff_num_deltas') {}
 
     sub git_patch_from_diff(Pointer is rw, Git::Diff, size_t --> int32)
@@ -370,8 +410,36 @@ class Git::Diff
         nativecast(Git::Patch, $ptr)
     }
 
+    method patches
+    {
+        Seq.new: class :: does Iterator
+        {
+            has Git::Diff $.diff;
+            has size_t $.index;
+            has size_t $.max;
+            method pull-one
+            {
+                $!index == $!max ?? IterationEnd !! $!diff.patch($!index++)
+            }
+        }.new(diff => self, max => self.elems)
+    }
+
     method delta(size_t $idx --> Git::Diff::Delta)
         is native('git2') is symbol('git_diff_get_delta') {}
+
+    method deltas
+    {
+        Seq.new: class :: does Iterator
+        {
+            has Git::Diff $.diff;
+            has size_t $.index;
+            has size_t $.max;
+            method pull-one
+            {
+                $!index == $!max ?? IterationEnd !! $!diff.delta($!index++)
+            }
+        }.new(diff => self, max => self.elems)
+    }
 
     sub git_diff_find_similar(Git::Diff, Git::Diff::Find::Options --> int32)
         is native('git2') {}
@@ -382,7 +450,6 @@ class Git::Diff
         $opts .= new(|opts) if opts;
         check(git_diff_find_similar(self, $opts));
     }
-
 
     submethod DESTROY { git_diff_free(self) }
 }

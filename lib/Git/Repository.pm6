@@ -17,6 +17,7 @@ use Git::Message;
 use Git::Index;
 use Git::Status;
 use Git::Revwalk;
+use Git::Checkout;
 
 enum Git::Repository::OpenFlag (
     GIT_REPOSITORY_OPEN_NO_SEARCH => 1 +< 0,
@@ -664,6 +665,11 @@ class Git::Repository
         my Pointer $ptr .= new;
         check(git_revwalk_new($ptr, self));
         nativecast(Git::Revwalk, $ptr)
+    }
+
+    method checkout(|opts)
+    {
+        Git::Checkout.checkout(repo => self, |opts)
     }
 
     submethod DESTROY { git_repository_free(self) }
