@@ -46,6 +46,10 @@ class Git::Remote is repr('CPointer')
         Git::Remote::Autotag::Option(git_remote_autotag(self))
     }
 
+    sub git_remote_connected(Git::Remote --> int32)
+        is native('git2') {}
+
+    method connected { git_remote_connected(self) == 1 }
 }
 
 

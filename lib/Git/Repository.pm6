@@ -164,6 +164,13 @@ class Git::Repository
     sub git_tag_list_match(Git::Strarray, Str, Git::Repository --> int32)
         is native('git2') {}
 
+    sub git_remote_create(Pointer is rw, Git::Repository, Str, Str --> int32)
+        is native('git2') {}
+
+    sub git_remote_create_anonymous(Pointer is rw, Git::Repository, Str
+                                    --> int32)
+        is native('git2') {}
+
     sub git_remote_list(Git::Strarray, Git::Repository --> int32)
         is native('git2') {}
 
@@ -404,6 +411,14 @@ class Git::Repository
         check($pattern ?? git_tag_list_match($array, $pattern, self)
                        !! git_tag_list($array, self));
         $array.list(:free)
+    }
+
+    method remote-create(Str:D $url, Str :$name)
+    {
+        my Pointer $ptr .= new;
+        check($name ?? git_remote_create($ptr, self, $name, $url)
+                    !! git_remote_create_anonymous($ptr, self, $url));
+        nativecast(Git::Remote, $ptr)
     }
 
     method remote-list()
