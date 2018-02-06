@@ -1,6 +1,31 @@
 use NativeCall;
 use Git::Error;
 use Git::Buffer;
+use Git::Proxy;
+use Git::Strarray;
+
+class Git::Remote::Callbacks is repr('CStruct')
+{
+    has int32 $.version = 1;
+    has Pointer $.side-band-progress;
+    has Pointer $.completion;
+    has Pointer $.credentials;
+    has Pointer $.certificate_check;
+    has Pointer $.transfer-progress;
+    has Pointer $.update-tips;
+    has Pointer $.pack-progress;
+    has Pointer $.push-transfer-progress;
+    has Pointer $.push-update-reference;
+    has Pointer $.push-negotiation;
+    has Pointer $.transport;
+    has Pointer $.payload;
+}
+
+enum Git::Fetch::Prune <
+    GIT_FETCH_PRUNE_UNSPECIFIED
+    GIT_FETCH_PRUNE
+    GIT_FETCH_NO_PRUNE
+>;
 
 enum Git::Remote::Autotag::Option <
     GIT_REMOTE_DOWNLOAD_TAGS_UNSPECIFIED
@@ -9,14 +34,41 @@ enum Git::Remote::Autotag::Option <
     GIT_REMOTE_DOWNLOAD_TAGS_ALL
 >;
 
-class Git::Remote::Callbacks is repr('CStruct')
-{
-    has int32 $.version = 1;
-}
-
 class Git::Fetch::Options is repr('CStruct')
 {
     has int32 $.version = 1;
+    HAS Git::Remote::Callbacks $.callbacks;
+    has int32 $.prune;
+    has int32 $.update-fetchhead;
+    has int32 $.download-tags;
+    HAS Git::Proxy::Options $.proxy-opts;
+    HAS Git::Strarray $.custom-headers;
+
+    sub git_fetch_init_options(Git::Fetch::Options, int32 --> int32)
+        is native('git2') {}
+
+    submethod BUILD(Bool :$prune,
+                    Str  :$tags where Str|'auto'|'none'|'all' )
+    {
+        check(git_fetch_init_options(self, 1));
+
+        with $prune { $!prune = $_ ?? GIT_FETCH_PRUNE !! GIT_FETCH_NO_PRUNE }
+
+        with $tags
+        {
+            say "tags";
+            $!download-tags = do given $tags
+            {
+                when 'auto' { GIT_REMOTE_DOWNLOAD_TAGS_AUTO }
+                when 'none' { GIT_REMOTE_DOWNLOAD_TAGS_NONE }
+                when 'all'  { GIT_REMOTE_DOWNLOAD_TAGS_ALL  }
+            }
+        }
+    }
+
+    method prune { Git::Fetch::Prune($!prune) }
+
+    method download-tags { Git::Remote::Autotag::Option($!download-tags) }
 }
 
 class Git::Remote is repr('CPointer')
@@ -72,6 +124,9 @@ class Git::Remote is repr('CPointer')
         check(git_remote_default_branch($buf, self));
         $buf.str
     }
+
+    method disconnect()
+        is native('git2') is symbol('git_remote_disconnect') {}
 }
 
 

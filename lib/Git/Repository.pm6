@@ -456,15 +456,14 @@ class Git::Repository
     }
 
     method remote-set-autotag(Str:D $remote,
-                              Bool :$auto,
-                              Bool :$none,
-                              Bool :$all)
+                              Str $tags where 'auto'|'none'|'all')
     {
-        my int32 $opt = $auto ?? GIT_REMOTE_DOWNLOAD_TAGS_AUTO
-                     !! $none ?? GIT_REMOTE_DOWNLOAD_TAGS_NONE
-                     !! $all  ?? GIT_REMOTE_DOWNLOAD_TAGS_ALL
-                     !! die "Autotag must be auto, none or all";
-        say $opt;
+        my int32 $opt = do given $tags
+        {
+            when 'auto' { GIT_REMOTE_DOWNLOAD_TAGS_AUTO }
+            when 'none' { GIT_REMOTE_DOWNLOAD_TAGS_NONE }
+            when 'all'  { GIT_REMOTE_DOWNLOAD_TAGS_ALL  }
+        }
         check(git_remote_set_autotag(self, $remote, $opt))
     }
 
