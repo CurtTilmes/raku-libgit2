@@ -171,6 +171,10 @@ class Git::Repository
                                     --> int32)
         is native('git2') {}
 
+    sub git_remote_create_with_fetchspec(Pointer is rw, Git::Repository, Str,
+                                         Str, Str --> int32)
+        is native('git2') {}
+
     sub git_remote_list(Git::Strarray, Git::Repository --> int32)
         is native('git2') {}
 
@@ -184,6 +188,9 @@ class Git::Repository
         is native('git2') {}
 
     sub git_remote_set_autotag(Git::Repository, Str, int32 --> int32)
+        is native('git2') {}
+
+    sub git_remote_delete(Git::Repository, Str --> int32)
         is native('git2') {}
 
     sub git_branch_create(Pointer is rw, Git::Repository, Str,
@@ -413,11 +420,14 @@ class Git::Repository
         $array.list(:free)
     }
 
-    method remote-create(Str:D $url, Str :$name)
+    method remote-create(Str:D :$url, Str :$name, Str :$fetch)
     {
         my Pointer $ptr .= new;
-        check($name ?? git_remote_create($ptr, self, $name, $url)
-                    !! git_remote_create_anonymous($ptr, self, $url));
+        check($name ??
+              ($fetch ?? git_remote_create_with_fetchspec($ptr, self, $name,
+                                                          $url, $fetch)
+                      !! git_remote_create($ptr, self, $name, $url))
+              !! git_remote_create_anonymous($ptr, self, $url));
         nativecast(Git::Remote, $ptr)
     }
 
@@ -456,6 +466,11 @@ class Git::Repository
                      !! die "Autotag must be auto, none or all";
         say $opt;
         check(git_remote_set_autotag(self, $remote, $opt))
+    }
+
+    method remote-delete(Str:D $name)
+    {
+        check(git_remote_delete(self, $name))
     }
 
     multi method blob-create(Blob $buf)
