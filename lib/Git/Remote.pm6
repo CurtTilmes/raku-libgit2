@@ -1,5 +1,12 @@
 use NativeCall;
 
+enum Git::Remote::Autotag::Option <
+    GIT_REMOTE_DOWNLOAD_TAGS_UNSPECIFIED
+    GIT_REMOTE_DOWNLOAD_TAGS_AUTO
+    GIT_REMOTE_DOWNLOAD_TAGS_NONE
+    GIT_REMOTE_DOWNLOAD_TAGS_ALL
+>;
+
 class Git::Remote::Callbacks is repr('CStruct')
 {
     has int32 $.version = 1;
@@ -23,8 +30,22 @@ class Git::Remote is repr('CPointer')
     method name(--> Str)
         is native('git2') is symbol('git_remote_name') {}
 
-#    method owner(--> Git::Repository)
-#        is native('git2') is symbol('git_remote_owner') {}
+    sub git_remote_owner(Git::Remote --> Pointer)
+        is native('git2') {}
+
+    method owner
+    {
+        nativecast(::('Git::Repository'), git_remote_owner(self))
+    }
+
+    sub git_remote_autotag(Git::Remote --> int32)
+        is native('git2') {}
+
+    method autotag
+    {
+        Git::Remote::Autotag::Option(git_remote_autotag(self))
+    }
+
 }
 
 

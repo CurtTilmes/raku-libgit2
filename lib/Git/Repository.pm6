@@ -170,6 +170,15 @@ class Git::Repository
     sub git_remote_lookup(Pointer is rw, Git::Repository, Str --> int32)
         is native('git2') {}
 
+    sub git_remote_add_fetch(Git::Repository, Str, Str --> int32)
+        is native('git2') {}
+
+    sub git_remote_add_push(Git::Repository, Str, Str --> int32)
+        is native('git2') {}
+
+    sub git_remote_set_autotag(Git::Repository, Str, int32 --> int32)
+        is native('git2') {}
+
     sub git_branch_create(Pointer is rw, Git::Repository, Str,
                           Git::Commit, int32 --> int32)
         is native('git2') {}
@@ -409,6 +418,29 @@ class Git::Repository
         my Pointer $ptr .= new;
         check(git_remote_lookup($ptr, self, $name));
         nativecast(Git::Remote, $ptr)
+    }
+
+    method remote-add-fetch(Str:D $remote, Str:D $refspec)
+    {
+        check(git_remote_add_fetch(self, $remote, $refspec))
+    }
+
+    method remote-add-push(Str:D $remote, Str:D $refspec)
+    {
+        check(git_remote_add_push(self, $remote, $refspec))
+    }
+
+    method remote-set-autotag(Str:D $remote,
+                              Bool :$auto,
+                              Bool :$none,
+                              Bool :$all)
+    {
+        my int32 $opt = $auto ?? GIT_REMOTE_DOWNLOAD_TAGS_AUTO
+                     !! $none ?? GIT_REMOTE_DOWNLOAD_TAGS_NONE
+                     !! $all  ?? GIT_REMOTE_DOWNLOAD_TAGS_ALL
+                     !! die "Autotag must be auto, none or all";
+        say $opt;
+        check(git_remote_set_autotag(self, $remote, $opt))
     }
 
     multi method blob-create(Blob $buf)

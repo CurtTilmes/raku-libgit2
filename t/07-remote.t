@@ -9,3 +9,7 @@ my $remote = $repo.remote-lookup('origin');
 is $remote.name, 'origin', 'name';
 
 like $remote.url, /libgit2/, 'url';
+
+isa-ok $remote.autotag, Git::Remote::Autotag::Option, 'autotag';
+
+
