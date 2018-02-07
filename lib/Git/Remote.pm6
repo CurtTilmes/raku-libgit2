@@ -127,6 +127,17 @@ class Git::Remote is repr('CPointer')
 
     method disconnect()
         is native('git2') is symbol('git_remote_disconnect') {}
+
+    sub git_remote_download(Git::Remote, Git::Strarray, Git::Fetch::Options
+                            --> int32)
+        is native('git2') {}
+
+    method download(|opts)
+    {
+        my Git::Strarray $refspecs;
+        my Git::Fetch::Options $opts .= new(|opts);
+        check(git_remote_download(self, $refspecs, $opts))
+    }
 }
 
 
