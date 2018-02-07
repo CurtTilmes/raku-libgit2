@@ -8,6 +8,7 @@ use Git::Message;
 use Git::Index;
 use Git::Status;
 use Git::FileMode;
+use Git::Channel;
 
 my package EXPORT::DEFAULT {}
 
@@ -36,12 +37,24 @@ enum Git::Feature (
     GIT_FEATURE_NSEC    => 1 +< 3,
 );
 
+enum Git::Trace <
+    GIT_TRACE_NONE
+    GIT_TRACE_FATAL
+    GIT_TRACE_ERROR
+    GIT_TRACE_WARN
+    GIT_TRACE_INFO
+    GIT_TRACE_DEBUG
+    GIT_TRACE_TRACE
+>;
+
+sub git-trace(int32 $level, Str $msg)
+{
+    say "Git::Trace($level) $msg"
+}
+
 class LibGit2
 {
     sub git_libgit2_version(int32 is rw, int32 is rw, int32 is rw)
-        is native('git2') {}
-
-    sub git_libgit2_features(--> int32)
         is native('git2') {}
 
     method version
@@ -53,9 +66,24 @@ class LibGit2
         "$major.$minor.$rev"
     }
 
+    sub git_libgit2_features(--> int32)
+        is native('git2') {}
+
     method features
     {
         my $features = git_libgit2_features;
         set do for Git::Feature.enums { .key if $features +& .value }
     }
+
+    sub git_trace_set(int32, &callback (int32, Str) --> int32)
+        is native('git2') {}
+
+    method trace(Str $level where 'none'|'fatal'|'error'|
+                                  'warn'|'info'|'debug'|'trace',
+                 &callback (int32, Str --> int32) = &git-trace)
+    {
+        check(git_trace_set(Git::Trace::{"GIT_TRACE_$level.uc()"},
+                            &callback))
+    }
+
 }
