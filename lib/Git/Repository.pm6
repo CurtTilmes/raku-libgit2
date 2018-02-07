@@ -803,5 +803,8 @@ class Git::Repository
         nativecast(Git::Odb, $ptr)
     }
 
+    method workdir(--> Str)
+        is native('git2') is symbol('git_repository_workdir') {}
+
     submethod DESTROY { git_repository_free(self) }
 }
