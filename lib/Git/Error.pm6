@@ -81,8 +81,15 @@ class X::Git is Exception
     submethod TWEAK
     {
         my $err = giterr_last;
-        $!class = Git::ErrorClass($err.klass);
-        $!message = $err.message;
+        with $err
+        {
+            $!class = Git::ErrorClass(.klass);
+            $!message = .message;
+        }
+        else
+        {
+            $!message = ~$!code;
+        }
         giterr_clear;
     }
 }
@@ -90,4 +97,5 @@ class X::Git is Exception
 sub check(int32 $code) is export
 {
     die X::Git.new(code => Git::ErrorCode($code)) if $code < 0;
+    $code
 }

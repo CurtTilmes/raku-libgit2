@@ -18,6 +18,8 @@ use Git::Index;
 use Git::Status;
 use Git::Revwalk;
 use Git::Checkout;
+use Git::Worktree;
+use Git::Odb;
 
 enum Git::Repository::OpenFlag (
     GIT_REPOSITORY_OPEN_NO_SEARCH => 1 +< 0,
@@ -284,6 +286,23 @@ class Git::Repository
     sub git_revwalk_new(Pointer is rw, Git::Repository --> int32)
         is native('git2') {}
 
+    sub git_worktree_list(Git::Strarray, Git::Repository --> int32)
+        is native('git2') {}
+
+    sub git_worktree_lookup(Pointer is rw, Git::Repository, Str --> int32)
+        is native('git2') {}
+
+    sub git_worktree_add(Pointer is rw, Git::Repository, Str, Str,
+                         Git::Worktree::Add::Options --> int32)
+        is native('git2') {}
+
+    sub git_worktree_open_from_repository(Pointer is rw, Git::Repository
+                                          --> int32)
+        is native('git2') {}
+
+    sub git_repository_odb(Pointer is rw, Git::Repository --> int32)
+        is native('git2') {}
+
     method new()
     {
         my Pointer $ptr .= new;
@@ -535,29 +554,44 @@ class Git::Repository
         check(git_tag_delete(self, $tag-name))
     }
 
-    method tag-lookup(Git::Oid $oid)    { self.lookup($oid, GIT_OBJ_TAG)    }
-    method commit-lookup(Git::Oid $oid) { self.lookup($oid, GIT_OBJ_COMMIT) }
-    method blob-lookup(Git::Oid $oid)   { self.lookup($oid, GIT_OBJ_BLOB)   }
-    method tree-lookup(Git::Oid $oid)   { self.lookup($oid, GIT_OBJ_TREE)   }
+    method tag-lookup(Git::Oid $oid)
+    {
+        self.object-lookup($oid, GIT_OBJ_TAG)
+    }
 
-    multi method lookup(Git::Oid:D $oid, Git::Type $type = GIT_OBJ_ANY)
+    method commit-lookup(Git::Oid $oid)
+    {
+        self.object-lookup($oid, GIT_OBJ_COMMIT)
+    }
+
+    method blob-lookup(Git::Oid $oid)
+    {
+        self.object-lookup($oid, GIT_OBJ_BLOB)
+    }
+
+    method tree-lookup(Git::Oid $oid)
+    {
+        self.object-lookup($oid, GIT_OBJ_TREE)
+    }
+
+    multi method object-lookup(Git::Oid:D $oid, Git::Type $type = GIT_OBJ_ANY)
     {
         my Pointer $ptr .= new;
         check(git_object_lookup($ptr, self, $oid, $type));
         Git::Objectish.object($ptr)
     }
 
-    multi method lookup(Git::Oid:D $oid, Str:D $type)
+    multi method object-lookup(Git::Oid:D $oid, Str:D $type)
     {
         samewith($oid, Git::Objectish.type($type))
     }
 
-    multi method lookup(Str:D $oid-str, Git::Type $type = GIT_OBJ_ANY)
+    multi method object-lookup(Str:D $oid-str, Git::Type $type = GIT_OBJ_ANY)
     {
         samewith(Git::Oid.new($oid-str), $type)
     }
 
-    multi method lookup(Str:D $oid-str, Str:D $type)
+    multi method object-lookup(Str:D $oid-str, Str:D $type)
     {
         samewith(Git::Oid.new($oid-str, Git::Objectish.type($type)))
     }
@@ -731,6 +765,42 @@ class Git::Repository
     method checkout(|opts)
     {
         Git::Checkout.checkout(repo => self, |opts)
+    }
+
+    method worktree-list
+    {
+        my Git::Strarray $array .= new;
+        check(git_worktree_list($array, self));
+        $array.list
+    }
+
+    method worktree-lookup(Str:D $name)
+    {
+        my Pointer $ptr .= new;
+        check(git_worktree_lookup($ptr, self, $name));
+        nativecast(Git::Worktree, $ptr)
+    }
+
+    method worktree-add(Str:D $name, Str:D $path, |opts)
+    {
+        my Git::Worktree::Add::Options $opts;
+        $opts .= new(|opts) if opts;
+        my Pointer $ptr .= new;
+        check(git_worktree_add($ptr, self, $name, $path, $opts));
+        nativecast(Git::Worktree, $ptr)
+    }
+
+    method worktree-open
+    {
+        my Pointer $ptr .= new;
+        check(git_worktree_open_from_repository($ptr, self));
+        nativecast(Git::Worktree, $ptr) }
+
+    method odb
+    {
+        my Pointer $ptr .= new;
+        check(git_repository_odb($ptr, self));
+        nativecast(Git::Odb, $ptr)
     }
 
     submethod DESTROY { git_repository_free(self) }

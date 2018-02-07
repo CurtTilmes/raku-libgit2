@@ -1,7 +1,8 @@
 use NativeCall;
 use Git::Oid;
 
-enum Git::Type (
+enum Git::Type # git_otype
+(
     GIT_OBJ_ANY       => -2,
     GIT_OBJ_BAD       => -1,
     GIT_OBJ__EXT1     => 0,
