@@ -5,28 +5,28 @@ use Git::Object;
 
 class Git::Blob is repr('CPointer') does Git::Objectish
 {
-    sub git_blob_is_binary(Git::Blob --> int32)
-        is native('git2') {}
+    method id(--> Git::Oid)
+        is native('git2') is symbol('git_blob_id') {}
 
-    sub git_blob_id(Git::Blob --> Pointer)
-        is native('git2') {}
+    method owner-ptr(--> Pointer)
+        is native('git2') is symbol('git_blob_owner') {}
 
-    sub git_blob_owner(Git::Blob --> Pointer)
-        is native('git2') {}
+    method owner { nativecast(::('Git::Repository'), $.owner-ptr) }
 
-    sub git_blob_rawcontent(Git::Blob --> CArray[uint8])
-        is native('git2') {}
+    method rawcontent( --> CArray[uint8])
+        is native('git2') is symbol('git_blob_rawcontent') {}
 
     method rawsize(--> int64)
         is native('git2') is symbol('git_blob_rawsize') {}
 
+    sub git_blob_is_binary(Git::Blob --> int32)
+        is native('git2') {}
+
     method is-binary { git_blob_is_binary(self) == 1 }
 
-    method content
-    {
-        my $array = git_blob_rawcontent(self);
-        buf8.new($array[^$.rawsize])
-    }
+    method Buf { buf8.new($.rawcontent(self)[^$.rawsize]) }
+
+    method Str { $.Buf.decode }
 
     submethod DESTROY { self.free }
 }

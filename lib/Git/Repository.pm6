@@ -20,6 +20,8 @@ use Git::Revwalk;
 use Git::Checkout;
 use Git::Worktree;
 use Git::Odb;
+use Git::Annotated;
+use Git::Describe;
 
 enum Git::Repository::OpenFlag (
     GIT_REPOSITORY_OPEN_NO_SEARCH => 1 +< 0,
@@ -280,7 +282,8 @@ class Git::Repository
         is native('git2') {}
 
     sub git_diff_tree_to_tree(Pointer is rw, Git::Repository,
-                              Git::Tree, Git::Tree, Git::Diff::Options --> int32)
+                              Git::Tree, Git::Tree, Git::Diff::Options
+                              --> int32)
         is native('git2') {}
 
     sub git_revwalk_new(Pointer is rw, Git::Repository --> int32)
@@ -301,6 +304,26 @@ class Git::Repository
         is native('git2') {}
 
     sub git_repository_odb(Pointer is rw, Git::Repository --> int32)
+        is native('git2') {}
+
+    sub git_annotated_commit_from_fetchhead(Pointer is rw, Git::Repository,
+                                            Str, Str, Git::Oid --> int32)
+        is native('git2') {}
+
+    sub git_annotated_commit_from_ref(Pointer is rw, Git::Repository,
+                                      Git::Reference --> int32)
+        is native('git2') {}
+
+    sub git_annotated_commit_from_revspec(Pointer is rw, Git::Repository,
+                                          Str --> int32)
+        is native('git2') {}
+
+    sub git_annotated_commit_lookup(Pointer is rw, Git::Repository, Git::Oid
+                                    --> int32)
+        is native('git2') {}
+
+    sub git_describe_workdir(Pointer is rw, Git::Repository,
+                             Git::Describe::Options --> int32)
         is native('git2') {}
 
     method new()
@@ -805,6 +828,49 @@ class Git::Repository
 
     method workdir(--> Str)
         is native('git2') is symbol('git_repository_workdir') {}
+
+    multi method annotated-commit(Str:D $branch-name, Str:D $remote-url,
+                                  Git::Oid:D $oid)
+    {
+        my Pointer $ptr .= new;
+        check(git_annotated_commit_from_fetchhead($ptr, self, $branch-name,
+                                                  $remote-url, $oid));
+        nativecast(Git::Annotated::Commit, $ptr)
+    }
+
+    multi method annotated-commit(Git::Reference:D $ref)
+    {
+        my Pointer $ptr .= new;
+        check(git_annotated_commit_from_ref($ptr, self, $ref));
+        nativecast(Git::Annotated::Commit, $ptr)
+    }
+
+    multi method annotated-commit(Str:D $revspec)
+    {
+        my Pointer $ptr .= new;
+        check(git_annotated_commit_from_revspec($ptr, self, $revspec));
+        nativecast(Git::Annotated::Commit, $ptr)
+    }
+
+    multi method annotated-commit-lookup(Git::Oid:D $oid)
+    {
+        my Pointer $ptr .= new;
+        check(git_annotated_commit_lookup($ptr, self, $oid));
+        nativecast(Git::Annotated::Commit, $ptr)
+    }
+
+    multi method annotated-commit-lookup(Str:D $oid-str)
+    {
+        samewith(Git::Oid.new($oid-str))
+    }
+
+    method describe-workdir(|opts)
+    {
+        my Pointer $ptr .= new;
+        my Git::Describe::Options $opts .= new(|opts);
+        check(git_describe_workdir($ptr, self, $opts));
+        nativecast(Git::Describe::Result, $ptr)
+    }
 
     submethod DESTROY { git_repository_free(self) }
 }

@@ -101,20 +101,16 @@ class Git::Commit is repr('CPointer') does Git::Objectish
         nativecast(Git::Commit, $ptr)
     }
 
-    sub git_describe_commit(Pointer, Git::Commit, Git::Describe::Options
+    sub git_describe_commit(Pointer is rw, Git::Commit, Git::Describe::Options
                             --> int32)
         is native('git2') {}
 
-    method describe()
+    method describe(|opts)
     {
-        my Git::Describe::Options $opts .= new;
-        say $opts;
+        my Git::Describe::Options $opts .= new(|opts);
         my Pointer $ptr .= new;
         check(git_describe_commit($ptr, self, $opts));
-        say "ok";
-        my $result = nativecast(Git::Describe::Result, $ptr);
-        say $result;
-
+        nativecast(Git::Describe::Result, $ptr);
     }
 
     submethod DESTROY { self.free }
