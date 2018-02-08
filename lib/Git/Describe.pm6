@@ -43,7 +43,9 @@ class Git::Describe::Format::Options is repr('CStruct')
     has int32 $.always-use-long-format;
     has Str $.dirty-suffix;
 
-    submethod BUILD(Bool :$always-use-long-format, Str :$dirty-suffix)
+    submethod BUILD(Bool :$always-use-long-format, Str :$dirty-suffix,
+                    uint32 :$!abbreviated-size)
+
     {
         $!always-use-long-format = $always-use-long-format ?? 1 !! 0;
 
