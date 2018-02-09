@@ -1,6 +1,7 @@
 use NativeCall;
 use Git::Error;
 use Git::Init;
+use Git::Open;
 use Git::Buffer;
 use Git::Config;
 use Git::Reference;
@@ -23,12 +24,6 @@ use Git::Worktree;
 use Git::Odb;
 use Git::Annotated;
 use Git::Describe;
-
-enum Git::Repository::OpenFlag (
-    GIT_REPOSITORY_OPEN_NO_SEARCH => 1 +< 0,
-    GIT_REPOSITORY_OPEN_CROSS_FS  => 1 +< 1,
-    GIT_REPOSITORY_OPEN_BARE      => 1 +< 2,
-);
 
 enum Git::Branch::Type (
     GIT_BRANCH_LOCAL  => 1,
@@ -100,6 +95,18 @@ class Git::Repository
         is native('git2') {}
 
     sub git_repository_open_ext(Pointer is rw, Str, uint32, Str --> int32)
+        is native('git2') {}
+
+    sub git_repository_open_from_worktree(Pointer is rw, Git::Worktree --> int32)
+        is native('git2') {}
+
+    sub git_repository_is_bare(Git::Repository --> int32)
+        is native('git2') {}
+
+    sub git_repository_is_empty(Git::Repository --> int32)
+        is native('git2') {}
+
+    sub git_repository_is_shallow(Git::Repository --> int32)
         is native('git2') {}
 
     sub git_repository_discover(Git::Buffer, Str, int32, Str --> int32)
@@ -291,10 +298,10 @@ class Git::Repository
     {
         my Pointer $ptr .= new;
         check(git_repository_new($ptr));
-        nativecast(Git::Repostitory, $ptr)
+        nativecast(Git::Repository, $ptr)
     }
 
-    method init(Str:D $path, Bool :$bare, |opts)
+    method init(Str:D $path, Bool :$bare, |opts --> Git::Repository)
     {
         my Pointer $ptr .= new;
         if opts
@@ -309,31 +316,28 @@ class Git::Repository
         nativecast(Git::Repository, $ptr)
     }
 
-    method open(Str $path)
+    multi method open(Str $path?, Bool :$bare)
     {
         my Pointer $ptr .= new;
-        check(git_repository_open($ptr, $path));
+        check($bare ?? git_repository_open_bare($ptr, $path)
+                    !! git_repository_open($ptr, $path));
         nativecast(Git::Repository, $ptr)
     }
 
-    method open-bare(Str $path)
+    multi method open(Str $path?, Bool:D :$search,
+                      Str :$ceiling-dirs, |opts)
     {
         my Pointer $ptr .= new;
-        check(git_repository_open_bare($ptr, $path));
+        check(git_repository_open_ext($ptr, $path,
+            Git::Repository::OpenOptions.flags(:$search, |opts),
+            $ceiling-dirs));
         nativecast(Git::Repository, $ptr)
     }
 
-    method open-ext(Str $path, Str $ceiling-dirs?,
-                    Bool :$no-search = False,
-                    Bool :$cross-fs = False,
-                    Bool :$bare = False)
+    multi method open(Git::Worktree $worktree)
     {
-        my uint32 $flags = ($no-search ?? GIT_REPOSITORY_OPEN_NO_SEARCH !! 0)
-                        +| ($cross-fs  ?? GIT_REPOSITORY_OPEN_CROSS_FS  !! 0)
-                        +| ($bare      ?? GIT_REPOSITORY_OPEN_BARE      !! 0);
-
         my Pointer $ptr .= new;
-        check(git_repository_open_ext($ptr, $path, $flags, $ceiling-dirs));
+        check(git_repository_open_from_worktree($worktree));
         nativecast(Git::Repository, $ptr)
     }
 
@@ -809,5 +813,50 @@ class Git::Repository
         nativecast(Git::Describe::Result, $ptr)
     }
 
+    method is-bare(--> Bool)
+    {
+        git_repository_is_bare(self) == 1
+    }
+
+    method is-empty(--> Bool)
+    {
+        check(git_repository_is_empty(self)) == 1
+    }
+
+    method is-shallow(--> Bool)
+    {
+        git_repository_is_shallow(self) == 1
+    }
+
     submethod DESTROY { git_repository_free(self) }
 }
+
+=begin pod
+
+=head1 NAME
+
+Git::Repository - LibGit2 Git Repository
+
+=head1 SYNOPSIS
+
+  use LibGit2;
+
+  my $repo = Git::Repository.init('/my/dir');
+
+  my $repo = Git::Repository.open('/my/dir');
+
+=head1 DESCRIPTION
+
+=head1 METHODS
+
+=item B<.init(Str:D $path, Bool :$bare, ... --> Git::Repository)>
+
+Initialize a directory as a Git repository and open it.
+
+See Git::Repository::InitOptions for more information on options.
+
+=item B<.open(Str $path?, Str :ceiling-dirs, ... --> Git::Repository)
+
+Open an existing Git repository.
+
+=end pod

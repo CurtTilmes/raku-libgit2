@@ -62,7 +62,7 @@ Init
     my $repo = Git::Repository.init('/my/dir', :mkpath,
     description => 'my description', ...);
 
-    See ... for the complete init option list.
+    See C<Git::Init::Options> for the complete init option list.
 
 Open
 ----
