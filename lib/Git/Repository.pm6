@@ -1,5 +1,6 @@
 use NativeCall;
 use Git::Error;
+use Git::Init;
 use Git::Buffer;
 use Git::Config;
 use Git::Reference;
@@ -29,51 +30,11 @@ enum Git::Repository::OpenFlag (
     GIT_REPOSITORY_OPEN_BARE      => 1 +< 2,
 );
 
-enum Git::Repository::InitFlag (
-    GIT_REPOSITORY_INIT_BARE              => 1 +< 0,
-    GIT_REPOSITORY_INIT_NO_REINIT         => 1 +< 1,
-    GIT_REPOSITORY_INIT_NO_DOTGIT_DIR     => 1 +< 2,
-    GIT_REPOSITORY_INIT_MKDIR             => 1 +< 3,
-    GIT_REPOSITORY_INIT_MKPATH            => 1 +< 4,
-    GIT_REPOSITORY_INIT_EXTERNAL_TEMPLATE => 1 +< 5,
-    GIT_REPOSITORY_INIT_RELATIVE_GITLINK  => 1 +< 6,
-);
-
-enum Git::Repository::InitMode (
-    GIT_REPOSITORY_INIT_SHARED_UMASK => 0,
-    GIT_REPOSITORY_INIT_SHARED_GROUP => 0o2775,
-    GIT_REPOSITORY_INIT_SHARED_ALL   => 0o2777,
-);
-
 enum Git::Branch::Type (
     GIT_BRANCH_LOCAL  => 1,
     GIT_BRANCH_REMOTE => 2,
     GIT_BRANCH_ALL    => 3,
 );
-
-class Git::Repository::InitOptions is repr('CStruct')
-{
-    has uint32 $.version;
-    has uint32 $.flags;
-    has uint32 $.mode;
-    has Str $.workdir-path;
-    has Str $.description;
-    has Str $.template-path;
-    has Str $.initial-head;
-    has Str $.origin-url;
-
-    submethod BUILD(uint32 :$!flags, uint32 :$!mode, Str :$workdir-path,
-                    Str :$description, Str :$template-path, Str :$initial-head,
-                    Str :$origin-url)
-    {
-        $!version = 1;
-        $!workdir-path  := $workdir-path;
-        $!description   := $description;
-        $!template-path := $template-path;
-        $!initial-head  := $initial-head;
-        $!origin-url    := $origin-url;
-    }
-}
 
 class Git::Repository is repr('CPointer') {...}
 
@@ -333,43 +294,19 @@ class Git::Repository
         nativecast(Git::Repostitory, $ptr)
     }
 
-    method init(Str $path, Bool :$bare = False)
+    method init(Str:D $path, Bool :$bare, |opts)
     {
         my Pointer $ptr .= new;
-        check(git_repository_init($ptr, $path, $bare ?? 1 !! 0));
+        if opts
+        {
+            check(git_repository_init_ext($ptr, $path,
+                Git::Repository::InitOptions.new(:$bare, |opts)))
+        }
+        else
+        {
+            check(git_repository_init($ptr, $path, $bare ?? 1 !! 0))
+        }
         nativecast(Git::Repository, $ptr)
-    }
-
-    method init-ext(Str $path, Str :$workdir-path, Str :$description,
-                Str :$template-path, Str :$initial-head, Str :$origin-url,
-                uint32 :$mode is copy = 0, Bool :$shared-group = False,
-                Bool :$shared-all = False, Bool :$bare = False,
-                Bool :$no-reinit = False, Bool :$no-dotgit-dir = False,
-                Bool :$mkdir = False, Bool :$mkpath = False,
-                Bool :$external-template = False, Bool :$relative-gitlink)
-    {
-        my uint32 $flags =
-           ($bare              ?? GIT_REPOSITORY_INIT_BARE              !! 0)
-        +| ($no-reinit         ?? GIT_REPOSITORY_INIT_NO_REINIT         !! 0)
-        +| ($no-dotgit-dir     ?? GIT_REPOSITORY_INIT_NO_DOTGIT_DIR     !! 0)
-        +| ($mkdir             ?? GIT_REPOSITORY_INIT_MKDIR             !! 0)
-        +| ($mkpath            ?? GIT_REPOSITORY_INIT_MKPATH            !! 0)
-        +| ($external-template ?? GIT_REPOSITORY_INIT_EXTERNAL_TEMPLATE !! 0)
-        +| ($relative-gitlink  ?? GIT_REPOSITORY_INIT_RELATIVE_GITLINK  !! 0);
-
-        $mode = GIT_REPOSITORY_INIT_SHARED_GROUP if $shared-group;
-        $mode = GIT_REPOSITORY_INIT_SHARED_ALL   if $shared-all;
-
-        my Git::Repository::InitOptions $opts .= new(version => 1,
-                                                     :$flags, :$mode
-                                                     :$workdir-path,
-                                                     :$description,
-                                                     :$template-path,
-                                                     :$initial-head,
-                                                     :$origin-url);
-        my Pointer $ptr .= new;
-        check(git_repository_init_ext($ptr, $path, $opts));
-        nativecast(Git::Repository, $ptr);
     }
 
     method open(Str $path)

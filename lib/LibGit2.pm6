@@ -49,7 +49,7 @@ enum Git::Trace <
 
 sub git-trace(int32 $level, Str $msg)
 {
-    say "Git::Trace($level) $msg"
+    say "{Git::Trace($level)} $msg"
 }
 
 class LibGit2
@@ -72,7 +72,7 @@ class LibGit2
     method features
     {
         my $features = git_libgit2_features;
-        set do for Git::Feature.enums { .key if $features +& .value }
+        do for Git::Feature.enums { .key if $features +& .value }
     }
 
     sub git_trace_set(int32, &callback (int32, Str) --> int32)
@@ -80,7 +80,7 @@ class LibGit2
 
     method trace(Str $level where 'none'|'fatal'|'error'|
                                   'warn'|'info'|'debug'|'trace',
-                 &callback (int32, Str --> int32) = &git-trace)
+                 &callback = &git-trace)
     {
         check(git_trace_set(Git::Trace::{"GIT_TRACE_$level.uc()"},
                             &callback))

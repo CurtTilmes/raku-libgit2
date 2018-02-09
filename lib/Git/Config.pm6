@@ -1,5 +1,6 @@
 use NativeCall;
 use Git::Error;
+use Git::Buffer;
 
 enum Git::Config::Level (
     GIT_CONFIG_LEVEL_PROGRAMDATA => 1,
@@ -107,6 +108,18 @@ class Git::Config is repr('CPointer') does Associative
         is native('git2') {}
 
     sub git_config_delete_multivar(Git::Config, Str, Str --> int32)
+        is native('git2') {}
+
+    sub git_config_find_global(Git::Buffer --> int32)
+        is native('git2') {}
+
+    sub git_config_find_programdata(Git::Buffer --> int32)
+        is native('git2') {}
+
+    sub git_config_find_system(Git::Buffer --> int32)
+        is native('git2') {}
+
+    sub git_config_find_xdg(Git::Buffer --> int32)
         is native('git2') {}
 
     submethod DESTROY { git_config_free(self) }
@@ -227,4 +240,16 @@ class Git::Config is repr('CPointer') does Associative
         $entry.value
     }
 
+    method find(Str:D $which where 'global'|'programdata'|'system'|'xdg')
+    {
+        my Git::Buffer $buf .= new;
+        check: do given $which
+        {
+            when 'global'      { git_config_find_global($buf) }
+            when 'programdata' { git_config_find_programdata($buf) }
+            when 'system'      { git_config_find_system($buf) }
+            when 'xdg'         { git_config_find_xdg($buf) }
+        }
+        $buf.str
+    }
 }

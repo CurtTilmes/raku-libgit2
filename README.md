@@ -6,7 +6,7 @@ This module provides Perl 6 access to [libgit2](https://libgit2.github.com/)
 That library must be installed, and this module will be subject to the
 features enabled during the build/install of that library.
 
-This module is EXPERIMENTAL.  In particular, I'm still trying to refine
+This module is **EXPERIMENTAL**.  In particular, I'm still trying to refine
 the Perl 6 API to be as friendly as possible, and also as Perl-ish as
 possible.  I've converted some callbacks into Channels, and some options
 into :pairs, etc.  If you see anything that could be done better, PLEASE
@@ -58,5 +58,19 @@ Init
     my $repo = Git::Repository.init('/my/dir');
 
     my $repo = Git::Repository.init('/my/dir', :bare);
+
+    my $repo = Git::Repository.init('/my/dir', :mkpath,
+    description => 'my description', ...);
+
+    See ... for the complete init option list.
+
+Open
+----
+
+Config
+------
+
+From a `Git::Repository`, you can use the `.config` method to access
+configuration information.
 
 
