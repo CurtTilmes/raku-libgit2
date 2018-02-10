@@ -2,6 +2,7 @@ use NativeCall;
 use Git::Error;
 use Git::Init;
 use Git::Open;
+use Git::Clone;
 use Git::Buffer;
 use Git::Config;
 use Git::Reference;
@@ -112,7 +113,7 @@ class Git::Repository
     sub git_repository_discover(Git::Buffer, Str, int32, Str --> int32)
         is native('git2') {}
 
-    sub git_clone(Pointer is rw, Str, Str, Pointer --> int32)
+    sub git_clone(Pointer is rw, Str, Str, Git::Clone::Options --> int32)
         is native('git2') {}
 
     sub git_repository_config(Pointer is rw, Git::Repository --> int32)
@@ -316,21 +317,20 @@ class Git::Repository
         nativecast(Git::Repository, $ptr)
     }
 
-    multi method open(Str $path?, Bool :$bare)
+    multi method open(Str $path?, Bool:D :$search, Str :$ceiling-dirs, *%opts)
+    {
+        my Pointer $ptr .= new;
+        check(git_repository_open_ext($ptr, $path,
+            Git::Repository::OpenOptions.flags(:$search, |%opts),
+            $ceiling-dirs));
+        nativecast(Git::Repository, $ptr)
+    }
+
+    multi method open(Str $path, Bool :$bare)
     {
         my Pointer $ptr .= new;
         check($bare ?? git_repository_open_bare($ptr, $path)
                     !! git_repository_open($ptr, $path));
-        nativecast(Git::Repository, $ptr)
-    }
-
-    multi method open(Str $path?, Bool:D :$search,
-                      Str :$ceiling-dirs, |opts)
-    {
-        my Pointer $ptr .= new;
-        check(git_repository_open_ext($ptr, $path,
-            Git::Repository::OpenOptions.flags(:$search, |opts),
-            $ceiling-dirs));
         nativecast(Git::Repository, $ptr)
     }
 
@@ -353,14 +353,16 @@ class Git::Repository
     method commondir(--> Str)
         is native('git2') is symbol('git_repository_commondir') {}
 
-    method clone(Str $url, Str $local-path)
+    method clone(Str:D $url, Str:D $local-path, |opts)
     {
         my Pointer $ptr .= new;
-        check(git_clone($ptr, $url, $local-path, Any));
+        my Git::Clone::Options $opts;
+        $opts .= new(|opts) if opts;
+        check(git_clone($ptr, $url, $local-path, $opts));
         nativecast(Git::Repository, $ptr)
     }
 
-    method config()
+    method config(--> Git::Config)
     {
         my Pointer $ptr .= new;
         check(git_repository_config($ptr, self));
@@ -654,7 +656,9 @@ class Git::Repository
     method status-file(Str $path)
     {
         my uint32 $flags = 0;
-        check(git_status_file($flags, self, $path));
+        my $ret = git_status_file($flags, self, $path);
+        return if $ret == GIT_ENOTFOUND;
+        check($ret);
         Git::Status::File.new(:$flags, :$path)
     }
 
@@ -849,14 +853,24 @@ Git::Repository - LibGit2 Git Repository
 
 =head1 METHODS
 
-=item B<.init(Str:D $path, Bool :$bare, ... --> Git::Repository)>
+=item B<.init>(Str:D $path, Bool :$bare, ... --> Git::Repository)
 
 Initialize a directory as a Git repository and open it.
 
 See Git::Repository::InitOptions for more information on options.
 
-=item B<.open(Str $path?, Str :ceiling-dirs, ... --> Git::Repository)
+=item B<.open>(Str $path, Str :ceiling-dirs, ... --> Git::Repository)
 
 Open an existing Git repository.
+
+=item B<.clone>(Str:D $url, Str:D $localpath --> Git::Repository)
+
+Clone a remote Git repository to the local disk.
+
+=item B<.config>(--> Git::Config)
+
+Access configuration information.
+
+See Git::Config for more information.
 
 =end pod

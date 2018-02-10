@@ -37,21 +37,21 @@ class Git::Status::File
 
     method is-current             { $!flags == 0 }
 
-    method is-index-new           { $!flags +& GIT_STATUS_INDEX_NEW        }
-    method is-index-modified      { $!flags +& GIT_STATUS_INDEX_MODIFIED   }
-    method is-index-deleted       { $!flags +& GIT_STATUS_INDEX_DELETED    }
-    method is-index-renamed       { $!flags +& GIT_STATUS_INDEX_RENAMED    }
-    method is-index-typechange    { $!flags +& GIT_STATUS_INDEX_TYPECHANGE }
+    method is-index-new           { so $!flags +& GIT_STATUS_INDEX_NEW        }
+    method is-index-modified      { so $!flags +& GIT_STATUS_INDEX_MODIFIED   }
+    method is-index-deleted       { so $!flags +& GIT_STATUS_INDEX_DELETED    }
+    method is-index-renamed       { so $!flags +& GIT_STATUS_INDEX_RENAMED    }
+    method is-index-typechange    { so $!flags +& GIT_STATUS_INDEX_TYPECHANGE }
 
-    method is-workdir-new         { $!flags +& GIT_STATUS_WT_NEW           }
-    method is-workdir-modified    { $!flags +& GIT_STATUS_WT_MODIFIED      }
-    method is-workdir-deleted     { $!flags +& GIT_STATUS_WT_DELETED       }
-    method is-workdir-typechange  { $!flags +& GIT_STATUS_WT_TYPECHANGE    }
-    method is-workdir-renamed     { $!flags +& GIT_STATUS_WT_RENAMED       }
-    method is-workdir-unreadable  { $!flags +& GIT_STATUS_WT_UNREADABLE    }
+    method is-workdir-new         { so $!flags +& GIT_STATUS_WT_NEW           }
+    method is-workdir-modified    { so $!flags +& GIT_STATUS_WT_MODIFIED      }
+    method is-workdir-deleted     { so $!flags +& GIT_STATUS_WT_DELETED       }
+    method is-workdir-typechange  { so $!flags +& GIT_STATUS_WT_TYPECHANGE    }
+    method is-workdir-renamed     { so $!flags +& GIT_STATUS_WT_RENAMED       }
+    method is-workdir-unreadable  { so $!flags +& GIT_STATUS_WT_UNREADABLE    }
 
-    method is-ignored             { $!flags +& GIT_STATUS_IGNORED          }
-    method is-conflicted          { $!flags +& GIT_STATUS_CONFLICTED       }
+    method is-ignored             { so $!flags +& GIT_STATUS_IGNORED          }
+    method is-conflicted          { so $!flags +& GIT_STATUS_CONFLICTED       }
 
     method status
     {

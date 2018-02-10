@@ -113,7 +113,7 @@ class Git::Checkout::Options is repr('CStruct')
                     Str :$our-label,
                     Str :$their-label,
                     )
-    {
+   {
         $!checkout-strategy =
                ($safe
                 ?? GIT_CHECKOUT_SAFE !! 0)

@@ -48,7 +48,9 @@ class Git::Fetch::Options is repr('CStruct')
         is native('git2') {}
 
     submethod BUILD(Bool :$prune,
-                    Str  :$tags where Str|'auto'|'none'|'all' )
+                    Str  :$tags where 'unspecified'|'auto'|'none'|'all'
+                         = 'unspecified',
+                    int32 :$!update-fetchhead)
     {
         check(git_fetch_init_options(self, 1));
 
@@ -56,7 +58,6 @@ class Git::Fetch::Options is repr('CStruct')
 
         with $tags
         {
-            say "tags";
             $!download-tags = do given $tags
             {
                 when 'auto' { GIT_REMOTE_DOWNLOAD_TAGS_AUTO }
@@ -65,10 +66,6 @@ class Git::Fetch::Options is repr('CStruct')
             }
         }
     }
-
-    method prune { Git::Fetch::Prune($!prune) }
-
-    method download-tags { Git::Remote::Autotag::Option($!download-tags) }
 }
 
 class Git::Remote is repr('CPointer')

@@ -2,6 +2,15 @@ use NativeCall;
 use Git::Error;
 use Git::Oid;
 use Git::Tree;
+use Git::Strarray;
+
+# git_index_add_option_t
+enum Git::Index::Add::Option (
+    GIT_INDEX_ADD_DEFAULT                => 0,
+    GIT_INDEX_ADD_FORCE                  => 1 +< 0,
+    GIT_INDEX_ADD_DISABLE_PATHSPEC_MATCH => 1 +< 1,
+    GIT_INDEX_ADD_CHECK_PATHSPEC         => 1 +< 2,
+);
 
 enum Git::Index::Capabilities (
     GIT_INDEXCAP_IGNORE_CASE => 1,
@@ -57,7 +66,8 @@ class Git::Index is repr('CPointer')
 
     method set-version(uint32 $version)
     {
-        check(git_index_set_version(self, $version))
+        check(git_index_set_version(self, $version));
+        self
     }
 
     method checksum(--> Git::Oid)
@@ -79,12 +89,14 @@ class Git::Index is repr('CPointer')
 
     method read(Bool :$force = False)
     {
-        check(git_index_read(self, $force ?? 1 !! 0))
+        check(git_index_read(self, $force ?? 1 !! 0));
+        self
     }
 
     method write
     {
-        check(git_index_write(self))
+        check(git_index_write(self));
+        self
     }
 
     method capabilities(--> int32)
@@ -132,6 +144,60 @@ class Git::Index is repr('CPointer')
 
     method get-bypath(Str $path, int32 $stage --> Git::Index::Entry)
         is native('git2') is symbol('git_index_get_bypath') {}
+
+    sub git_index_add_bypath(Git::Index, Str --> int32)
+        is native('git2') {}
+
+    method add-bypath(Str:D $path)
+    {
+        check(git_index_add_bypath(self, $path));
+        self
+    }
+
+    sub git_index_remove_bypath(Git::Index, Str --> int32)
+        is native('git2') {}
+
+    method remove-bypath(Str:D $path)
+    {
+        check(git_index_remove_bypath(self, $path));
+        self
+    }
+
+    sub git_index_add_all(Git::Index, Git::Strarray, uint32, Pointer,
+                          Pointer --> int32)
+        is native('git2') {}
+
+    method add-all(*@pathspec,
+                   Bool :$force,
+                   Bool :$disable-pathspec-match,
+                   Bool :$check-pathspec)
+    {
+        my uint32 $flags =
+           ($force                  ?? GIT_INDEX_ADD_FORCE                 !!0)
+        +| ($disable-pathspec-match ?? GIT_INDEX_ADD_DISABLE_PATHSPEC_MATCH!!0)
+        +| ($check-pathspec         ?? GIT_INDEX_ADD_CHECK_PATHSPEC        !!0);
+
+        my Git::Strarray $pathspec;
+        $pathspec .= new(@pathspec) if @pathspec;
+
+        my $ret = git_index_add_all(self, $pathspec, $flags, Pointer, Pointer);
+        return $ret if $ret <= 0;
+        check($ret)
+    }
+
+    sub git_index_remove_all(Git::Index, Git::Strarray, Pointer, Pointer
+                             --> int32)
+        is native('git2') {}
+
+    method remove-all(*@pathspec)
+    {
+        my Git::Strarray $pathspec;
+        $pathspec .= new(@pathspec) if @pathspec;
+
+        my $ret = git_index_remove_all(self, $pathspec, Pointer, Pointer);
+        return $ret if $ret <= 0;
+        check($ret);
+    }
 
     submethod DESTROY { git_index_free(self) }
 }

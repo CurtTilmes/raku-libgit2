@@ -62,15 +62,34 @@ Init
     my $repo = Git::Repository.init('/my/dir', :mkpath,
     description => 'my description', ...);
 
-    See C<Git::Init::Options> for the complete init option list.
+See C<Git::Repository::InitOptions> for the complete init option list.
+
+Clone
+-----
+
+    my $repo = Git::Repository.clone('https://github.com/...', '/my/dir');
+
+    my $repo = Git::Repository.clone('https://github.com/...', '/my/dir', :bare);
+
+See C<Git::Clone::Options> for the complete clone option list.
 
 Open
 ----
+
+    my $repo = Git::Repository.open('/my/dir');
+
+    my $repo = Git::Repository.open('/my/dir', :bare);
+
+    my $repo = Git::Repository.open('/my/dir/some/subdir', :search);
+
+See C<Git::Repository::OpenOptions> for the complete open options list.
 
 Config
 ------
 
 From a `Git::Repository`, you can use the `.config` method to access
 configuration information.
+
+    my $config = $repo.config;
 
 
