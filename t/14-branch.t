@@ -10,7 +10,7 @@ ok my $repo = Git::Repository.init($test-repo-dir), 'init';
 
 my $commit = $repo.commit-lookup(Git::Oid.new('09b0f95e3618ccb1284adbf4a210afc6d849c8c8'));
 
-#my $ref = $repo.reference('refs/heads/abranch');
+#my $ref = $repo.reference-lookup('refs/heads/abranch');
 #my $ref = $repo.branch-create('abranch', $commit);
 
 my $ref = $repo.branch-lookup('mybranch');

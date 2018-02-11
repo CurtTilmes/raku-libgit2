@@ -4,7 +4,7 @@ use LibGit2;
 
 ok my $repo = Git::Repository.open-ext($*PROGRAM.Str), 'open';
 
-ok my $ref = $repo.reference('refs/heads/master'), 'reference master';
+ok my $ref = $repo.reference-lookup('refs/heads/master'), 'reference master';
 
 is $ref.is-branch, True, 'is-branch';
 

@@ -191,10 +191,40 @@ A commit requires several components:
 
 * **:messsage** - Commit message.  Add **:prettify** option to prettify it.
 
-* **:tree* -- Git::Tree of the changes to add to the commit.  If not
-    specified, $repo.tree-lookup($repo.index.write-tree) will be used.
+* **:tree** -- Git::Tree of the changes to add to the commit.  If not
+    specified, $repo.tree-lookup($repo.index.write-tree) will be used, the
+    tree of all changes to the index.
 
 * **Git::Commit** - parents for this commit.  Specify **:root** for a
     root commit with no parents.  If no parents are specified, and
     **:root** is not included, the commit pointed to by 'HEAD' will be
     used as the only parent.
+
+    $repo.commit(message => "This is my new commit.");
+
+See ... for more information about commits.
+
+References
+----------
+
+Look up references by name with:
+
+     my $ref = $repo.reference-lookup('/refs/heads/master');
+
+or by 'short name' (by git precedence rules) with:
+
+    my $ref = $repo.ref('master');
+
+They return Git::Reference.
+
+You can get list of names of references:
+
+    .say for $repo.reference-list;
+
+You can also get the Oid from a reference name:
+
+    my $oid = $repo.name-to-id('HEAD');
+
+Tags
+----
+

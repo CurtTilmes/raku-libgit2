@@ -131,6 +131,10 @@ class Git::Repository
     sub git_reference_list(Git::Strarray, Git::Repository --> int32)
         is native('git2') {}
 
+    sub git_reference_create(Pointer is rw, Git::Repository, Str,
+                             Git::Oid, int32, Str --> int32)
+        is native('git2') {}
+
     sub git_tag_list(Git::Strarray, Git::Repository --> int32)
         is native('git2') {}
 
@@ -369,7 +373,7 @@ class Git::Repository
         nativecast(Git::Config, $ptr)
     }
 
-    method reference(Str $name)
+    method reference-lookup(Str $name)
     {
         my Pointer $ptr .= new;
         check(git_reference_lookup($ptr, self, $name));
@@ -395,6 +399,16 @@ class Git::Repository
         my Git::Strarray $array .= new;
         check(git_reference_list($array, self));
         $array.list(:free)
+    }
+
+    method reference-create(Str:D $name, Git::Oid:D $id, Bool :$force,
+                            Str :$message)
+    {
+        my Pointer $ptr .= new;
+        check(git_reference_create($ptr, self, $name, $id,
+                                   $force ?? 1 !! 0,
+                                   $message));
+        nativecast(Git::Reference, $ptr)
     }
 
     method tag-list(Str $pattern?)
