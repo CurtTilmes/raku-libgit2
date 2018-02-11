@@ -217,9 +217,27 @@ or by 'short name' (by git precedence rules) with:
 
 They return Git::Reference.
 
-You can get list of names of references:
+You can get list of names references:
 
     .say for $repo.reference-list;
+
+or a list of full references:
+
+    .name.say for $repo.references;  # Say each full name
+
+    refs/heads/master
+    refs/remotes/origin/master
+    refs/tags/0.1
+
+    .short.say for $repo.references;  # Say each short name
+
+    master
+    origin/master
+    0.1
+
+or limit with a glob:
+
+    .name.say for $repo.references('refs/tags/*')
 
 You can also get the Oid from a reference name:
 
@@ -228,3 +246,23 @@ You can also get the Oid from a reference name:
 Tags
 ----
 
+Branches
+--------
+
+Remotes
+-------
+
+Fetch
+-----
+
+Checkout
+--------
+
+Push
+----
+
+Worktree
+--------
+
+Diff
+----

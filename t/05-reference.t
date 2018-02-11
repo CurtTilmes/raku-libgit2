@@ -2,7 +2,7 @@ use Test;
 use File::Temp;
 use LibGit2;
 
-ok my $repo = Git::Repository.open-ext($*PROGRAM.Str), 'open';
+ok my $repo = Git::Repository.open($*PROGRAM.Str, :search), 'open';
 
 ok my $ref = $repo.reference-lookup('refs/heads/master'), 'reference master';
 
@@ -20,6 +20,6 @@ is $ref.is-branch, True, 'is-branch';
 
 ok (my @list = $repo.reference-list()), 'reference-list';
 
-like 'refs/tags/0.1', /@list/, 'tag 0.1 in reference list';
+.name.say for $repo.references;
 
-like 'refs/heads/master', /@list/, 'master head in reference list';
+.short.say for $repo.references;

@@ -1,6 +1,6 @@
 use NativeCall;
 
-class Git::Strarray is repr('CStruct') does Positional
+class Git::Strarray is repr('CStruct') is Positional
 {
     has CArray[Str] $.strings handles <AT-POS>;
     has size_t $.elems;
@@ -18,9 +18,10 @@ class Git::Strarray is repr('CStruct') does Positional
         }
     }
 
-    method list(:$free)
+    method list(Bool :$free)
     {
-        LEAVE self.free if $free;
-        $!strings[^$!elems]
+        my @list = $!strings[^$!elems];
+        self.free;
+        @list
     }
 }

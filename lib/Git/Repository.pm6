@@ -401,6 +401,11 @@ class Git::Repository
         $array.list(:free)
     }
 
+    method references(Str $glob?)
+    {
+        Seq.new(Git::Reference::Iterator.new(self, $glob))
+    }
+
     method reference-create(Str:D $name, Git::Oid:D $id, Bool :$force,
                             Str :$message)
     {
