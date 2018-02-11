@@ -181,8 +181,22 @@ class Git::Index is repr('CPointer')
         $pathspec .= new(@pathspec) if @pathspec;
 
         my $ret = git_index_add_all(self, $pathspec, $flags, Pointer, Pointer);
-        return $ret if $ret <= 0;
-        check($ret)
+        check($ret);
+        self
+    }
+
+    sub git_index_update_all(Git::Index, Git::Strarray, Pointer, Pointer
+        --> int32)
+        is native('git2') {}
+
+    method update-all(*@pathspec)
+    {
+        my Git::Strarray $pathspec;
+        $pathspec .= new(@pathspec) if @pathspec;
+
+        my $ret = git_index_update_all(self, $pathspec, Pointer, Pointer);
+        check($ret);
+        self
     }
 
     sub git_index_remove_all(Git::Index, Git::Strarray, Pointer, Pointer

@@ -62,7 +62,7 @@ Init
     my $repo = Git::Repository.init('/my/dir', :mkpath,
     description => 'my description', ...);
 
-See C<Git::Repository::InitOptions> for the complete init option list.
+See Git::Repository::InitOptions for the complete init option list.
 
 Clone
 -----
@@ -71,7 +71,7 @@ Clone
 
     my $repo = Git::Repository.clone('https://github.com/...', '/my/dir', :bare);
 
-See C<Git::Clone::Options> for the complete clone option list.
+See Git::Clone::Options for the complete clone option list.
 
 Open
 ----
@@ -82,7 +82,7 @@ Open
 
     my $repo = Git::Repository.open('/my/dir/some/subdir', :search);
 
-See C<Git::Repository::OpenOptions> for the complete open options list.
+See Git::Repository::OpenOptions for the complete open options list.
 
 Config
 ------
@@ -92,4 +92,109 @@ configuration information.
 
     my $config = $repo.config;
 
+Status
+------
 
+Get status for a specific file/path:
+
+    my $status = $repo.status-file('afile');
+
+    say $status.status;
+    say $status.path;
+    say "new in workdir" if $status.is-workdir-new;
+
+Other queries on status:
+  * is-current
+  * is-index-new
+  * is-index-modified
+  * is-index-deleted
+  * is-index-renamed
+  * is-index-typechange
+  * is-workdir-new
+  * is-workdir-modified
+  * is-workdir-deleted
+  * is-workdir-typechange
+  * is-workdir-renamed
+  * is-workdir-unreadable
+  * is-ignored
+  * is-conflicted
+
+Query for status of everything, or specific pathes/globs:
+
+    for $repo.status-each
+    {
+        say "new" if .is-workdir-new;
+    }
+
+    say .path for $repo.status-each('*.p6', :include-untracked);
+
+See `Git::Status::Options` for more information on status options.
+
+Index
+-----
+
+Retrieve an object representing the repository's index with `.index`,
+then you can add files to the index, either a specific file
+`.add-bypath` or a group of files or all files with `.add-all`, or
+just update with `.update-all`.
+
+    my $repo.index;
+    $index.add-bypath('afile.p6');  # Even works on ignored files
+    $index.add-all('*.p6');         # Add any new files or update any changes
+    $index.update-all('*.t');       # Just update, don't add new files
+
+Remove from index with `.remove-bypath` or `.remove-all`.
+
+The index is maintained in memory.  To persist the changes to disk,
+always `$index.write` after completeing changes.  Use `.read(:force)`
+to discard any changes and re-read index from disk.
+
+See Git::Index for more information on options.
+
+After adding new or changed files to the index, create a `Git::Tree`
+representing the changes with `.write-tree` which returns a `Git::Oid`
+for the new tree.
+
+    my $tree-id = $index.write-tree;
+
+Tree
+----
+
+    my $tree = $repo.tree-lookup($tree-id);
+
+Signature
+---------
+
+    my $sig = $repo.signature-default;  # Fails if user.name, user.email not set
+    my $sig = Git::Signature('Full Name <name@address.com');
+    my $sig = Git::Signature('Full Name', 'name@address.com');
+    my $sig = Git::Signature('Full Name', 'name@address.com',
+       DateTime.new('...'));
+
+Commit
+------
+
+A commit requires several components:
+
+* **:update-ref** - Defaults to 'HEAD', the name of the reference that
+    will be updated to point to this commit. If the reference is not
+    direct, it will be resolved to a direct reference. Use "HEAD" to
+    update the HEAD of the current branch and make it point to this
+    commit. If the reference doesn't exist yet, it will be created. If
+    it does exist, the first parent must be the tip of this branch.
+
+* **:author** - Git::Signature of the commit author, defaults to
+    $repo.signature-default.
+
+* **:committer** - Git::Signature of the committer, defaults to the
+    same as the author.
+
+* **:messsage** - Commit message.  Add **:prettify** option to prettify it.
+
+* **:tree* -- Git::Tree of the changes to add to the commit.  If not
+    specified, $repo.tree-lookup($repo.index.write-tree) will be used.
+
+* **Git::Commit** - parents for this commit.  Specify **:root** for a
+    root commit with no parents.  If no parents are specified, and
+    **:root** is not included, the commit pointed to by 'HEAD' will be
+    used as the only parent.

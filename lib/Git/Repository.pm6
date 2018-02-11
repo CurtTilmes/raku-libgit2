@@ -600,23 +600,45 @@ class Git::Repository
     }
 
     method commit(Str:D :$update-ref = 'HEAD',
-                  Git::Signature:D :$author = !.signature-default,
+                  Git::Signature:D :$author = $.signature-default,
                   Git::Signature:D :$committer = $author,
-                  Str:D :$encoding =  'UTF-8',
-                  Str:D :$message!,
-                  Git::Tree:D :$tree,
+                  Str:D :$encoding =  'UTF-8',  # Should really encode message
+                  Str:D :$message!,             # with specified encoding
                   Bool :$prettify = False,
+                  Git::Tree:D :$tree = $.tree-lookup($.index.write-tree),
+                  Bool :$root = False,
                   *@parents)
     {
-        my Pointer $ptr .= new;
-        my @parents-array := CArray[Git::Commit].new(@parents);
+        my Git::Oid $oid .= new;
 
-        check(git_commit_create($ptr, self, $update-ref,
+        my CArray[Git::Commit] $parents-array;
+        my size_t $parent-count;
+
+        if $root
+        {
+            $parent-count = 0;
+        }
+        else
+        {
+            if @parents
+            {
+                $parent-count = @parents.elems;
+                $parents-array .= new(@parents);
+            }
+            else
+            {
+                $parent-count = 1;
+                $parents-array .= new($.commit-lookup($.name-to-id('HEAD')));
+            }
+        }
+
+        check(git_commit_create($oid, self, $update-ref,
                                 $author, $committer, $encoding,
                                 $prettify ?? Git::Message.prettify($message)
                                           !! $message,
-                                $tree, @parents.elems, @parents-array));
-        nativecast(Git::Oid, $ptr)
+                                $tree ?? $tree !! $.lookup($.index.write-tree),
+                                $parent-count, $parents-array));
+        $oid
     }
 
     method index(--> Git::Index)

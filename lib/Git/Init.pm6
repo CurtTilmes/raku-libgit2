@@ -41,7 +41,8 @@ class Git::Repository::InitOptions is repr('CStruct')
            +| ($no-reinit         ?? GIT_REPOSITORY_INIT_NO_REINIT        !! 0)
            +| ($no-dotgit-dir     ?? GIT_REPOSITORY_INIT_NO_DOTGIT_DIR    !! 0)
            +| ($mkdir             ?? GIT_REPOSITORY_INIT_MKDIR            !! 0)
-           +| ($external-template ?? GIT_REPOSITORY_INIT_EXTERNAL_TEMPLATE!! 0)
+           +| ($external-template || $template-path
+                  ?? GIT_REPOSITORY_INIT_EXTERNAL_TEMPLATE !! 0)
            +| ($relative-gitlink  ?? GIT_REPOSITORY_INIT_RELATIVE_GITLINK !! 0);
 
         $!mode = GIT_REPOSITORY_INIT_SHARED_GROUP if $shared-group;
