@@ -92,6 +92,7 @@ class Git::Worktree is repr('CPointer')
 
     method validate
     {
-        check(git_worktree_validate(self))
+        check(git_worktree_validate(self));
+        True
     }
 }

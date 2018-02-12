@@ -2,7 +2,7 @@ use Test;
 use File::Temp;
 use LibGit2;
 
-plan 8;
+plan 9;
 
 my $testdir = tempdir;
 
@@ -27,4 +27,6 @@ isa-ok $repo = Git::Repository.open(~$subdir, :search),
     Git::Repository, 'open search';
 
 is $repo.commondir, $testdir.IO.child('.git/'), 'correct git dir';
+
+is $repo.item-path('index'), $testdir.IO.child('.git/index'), 'item-path';
 

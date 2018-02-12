@@ -102,14 +102,14 @@ class Git::Odb
     sub git_odb_hash(Git::Oid, Blob, size_t, int32 --> int32)
         is native('git2') {}
 
-    multi method hash(Blob $buf, Git::Type $type)
+    multi method hash(Blob $buf, Str $type = 'blob')
     {
         my Git::Oid $oid .= new;
-        check(git_odb_hash($oid, $buf, $buf.bytes, $type));
+        check(git_odb_hash($oid, $buf, $buf.bytes, Git::Objectish.type($type)));
         $oid
     }
 
-    multi method hash(Str $str, Git::Type $type)
+    multi method hash(Str $str, Str $type = 'blob')
     {
         self.hash($str.encode, $type)
     }
@@ -117,10 +117,10 @@ class Git::Odb
     sub git_odb_hashfile(Git::Oid, Str, int32 --> int32)
         is native('git2') {}
 
-    method hashfile(Str:D $path, Git::Type $type)
+    method hashfile(Str:D $path, Str $type = 'blob')
     {
         my Git::Oid $oid .= new;
-        check(git_odb_hashfile($oid, $path, $type));
+        check(git_odb_hashfile($oid, $path, Git::Objectish.type($type)));
         $oid
     }
 

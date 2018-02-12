@@ -27,7 +27,7 @@ use Git::Annotated;
 use Git::Describe;
 use Git::Branch;
 
-#git_repository_state_t
+# git_repository_state_t
 enum Git::Repository::State
 <
     GIT_REPOSITORY_STATE_NONE
@@ -42,6 +42,25 @@ enum Git::Repository::State
     GIT_REPOSITORY_STATE_REBASE_MERGE
     GIT_REPOSITORY_STATE_APPLY_MAILBOX
     GIT_REPOSITORY_STATE_APPLY_MAILBOX_OR_REBASE
+>;
+
+# git_repository_item_t
+enum Git::Repository::Item
+<
+    GIT_REPOSITORY_ITEM_GITDIR
+    GIT_REPOSITORY_ITEM_WORKDIR
+    GIT_REPOSITORY_ITEM_COMMONDIR
+    GIT_REPOSITORY_ITEM_INDEX
+    GIT_REPOSITORY_ITEM_OBJECTS
+    GIT_REPOSITORY_ITEM_REFS
+    GIT_REPOSITORY_ITEM_PACKED_REFS
+    GIT_REPOSITORY_ITEM_REMOTES
+    GIT_REPOSITORY_ITEM_CONFIG
+    GIT_REPOSITORY_ITEM_INFO
+    GIT_REPOSITORY_ITEM_HOOKS
+    GIT_REPOSITORY_ITEM_LOGS
+    GIT_REPOSITORY_ITEM_MODULES
+    GIT_REPOSITORY_ITEM_WORKTREES
 >;
 
 class Git::Repository is repr('CPointer')
@@ -246,6 +265,13 @@ class Git::Repository is repr('CPointer')
                                           --> int32)
         is native('git2') {}
 
+    sub git_repository_head_for_worktree(Pointer is rw, Git::Repository, Str
+                                         --> int32)
+        is native('git2') {}
+
+    sub git_repository_is_worktree(Git::Repository --> int32)
+        is native('git2') {}
+
     sub git_repository_odb(Pointer is rw, Git::Repository --> int32)
         is native('git2') {}
 
@@ -275,10 +301,20 @@ class Git::Repository is repr('CPointer')
     sub git_repository_head_detached(Git::Repository --> int32)
         is native('git2') {}
 
+    sub git_repository_detach_head(Git::Repository --> int32)
+        is native('git2') {}
+
     sub git_repository_head_unborn(Git::Repository --> int32)
         is native('git2') {}
 
     sub git_repository_state(Git::Repository --> int32)
+        is native('git2') {}
+
+    sub git_repository_state_cleanup(Git::Repository --> int32)
+        is native('git2') {}
+
+    sub git_repository_hashfile(Git::Oid, Git::Repository, Str, int32, Str
+                                --> int32)
         is native('git2') {}
 
     method new()
@@ -289,6 +325,8 @@ class Git::Repository is repr('CPointer')
     }
 
     method state { Git::Repository::State(git_repository_state(self)) }
+
+    method state-cleanup { check(git_repository_state_cleanup(self)) }
 
     method init(Str:D $path, Bool :$bare, |opts --> Git::Repository)
     {
@@ -794,7 +832,17 @@ class Git::Repository is repr('CPointer')
     {
         my Pointer $ptr .= new;
         check(git_worktree_open_from_repository($ptr, self));
-        nativecast(Git::Worktree, $ptr) }
+        nativecast(Git::Worktree, $ptr)
+    }
+
+    method head-for-worktree(Str:D $name)
+    {
+        my Pointer $ptr .= new;
+        check(git_repository_head_for_worktree($ptr, self, $name));
+        nativecast(Git::Reference, $ptr)
+    }
+
+    method is-worktree { git_repository_is_worktree(self) == 1 }
 
     method odb
     {
@@ -878,12 +926,54 @@ class Git::Repository is repr('CPointer')
                                !! check($ret)
     }
 
+    method detach-head { check(git_repository_detach_head(self)) }
+
     method head-unborn()
     {
         my $ret = git_repository_head_unborn(self);
         $ret == 1 ?? True
                   !! $ret == 0 ?? False
                                !! check($ret)
+    }
+
+    method hashfile(Str:D $path, Str :$as-path,
+                    Str :$type where 'commit'|'tree'|'blob'|'tag' = 'blob')
+    {
+        my Git::Oid $oid .= new;
+        check(git_repository_hashfile($oid, self, $path,
+                                      Git::Objectish.type($type), $as-path));
+        $oid
+    }
+
+    method get-namespace(--> Str)
+        is native('git2') is symbol('git_repository_get_namespace') {}
+
+    sub git_repository_set_namespace(Git::Repository, Str --> int32)
+        is native('git2') {}
+
+    method set-namespace(Str:D $nmspace)
+    {
+        check(git_repository_set_namespace(self, $nmspace));
+    }
+
+    sub git_repository_set_ident(Git::Repository, Str, Str --> int32)
+        is native('git2') {}
+
+    method set-ident(Str $name, Str $email)
+    {
+        check(git_repository_set_ident(self, $name, $email));
+        self
+    }
+
+    sub git_repository_item_path(Git::Buffer, Git::Repository, int32 --> int32)
+        is native('git2') {}
+
+    method item-path(Str:D $item)
+    {
+        my Git::Buffer $buf .= new;
+        check(git_repository_item_path($buf, self,
+            Git::Repository::Item::{"GIT_REPOSITORY_ITEM_$item.uc()"}));
+        $buf.str
     }
 
     submethod DESTROY { git_repository_free(self) }
