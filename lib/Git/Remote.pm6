@@ -98,6 +98,9 @@ class Git::Remote is repr('CPointer')
         nativecast(Git::Remote, $ptr)
     }
 
+    method stop
+        is native('git2') is symbol('git_remote_stop') {}
+
     method url(--> Str)
         is native('git2') is symbol('git_remote_url') {}
 
@@ -180,6 +183,18 @@ class Git::Remote is repr('CPointer')
         my Git::Strarray $refspecs;
         my Git::Fetch::Options $opts .= new(|opts);
         check(git_remote_download(self, $refspecs, $opts))
+    }
+
+    sub git_remote_upload(Git::Remote, Git::Strarray, Git::Push::Options
+                          --> int32)
+        is native('git2') {}
+
+    method upload(|opts)
+    {
+        my Git::Strarray $refspecs;
+        my Git::Push::Options $opts;
+        $opts .= new(|opts) if opts;
+        check(git_remote_upload(self, $refspecs, $opts))
     }
 
     sub git_remote_get_fetch_refspecs(Git::Strarray, Git::Remote --> int32)
