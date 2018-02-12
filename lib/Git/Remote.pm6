@@ -3,7 +3,16 @@ use Git::Error;
 use Git::Buffer;
 use Git::Proxy;
 use Git::Strarray;
+use Git::Oid;
 
+# git_direction
+enum Git::Direction
+<
+    GIT_DIRECTION_FETCH
+    GIT_DIRECTION_PUSH
+>;
+
+# git_remote_callbacks
 class Git::Remote::Callbacks is repr('CStruct')
 {
     has int32 $.version = 1;
@@ -68,6 +77,16 @@ class Git::Fetch::Options is repr('CStruct')
     }
 }
 
+# git_remote_head
+class Git::Remote::Head is repr('CStruct')
+{
+    has int32 $.local;
+    HAS Git::Oid $.oid;
+    HAS Git::Oid $.loid;
+    has Str $.name;
+    has Str $.symref-target;
+}
+
 class Git::Remote is repr('CPointer')
 {
     sub git_remote_free(Git::Remote)
@@ -122,8 +141,41 @@ class Git::Remote is repr('CPointer')
         $buf.str
     }
 
+    sub git_remote_connect(Git::Remote, int32, Git::Remote::Callbacks,
+                           Git::Proxy::Options, Git::Strarray --> int32)
+        is native('git2') {}
+
+    method connect(Str :$dir where 'fetch'|'push', |opts)
+    {
+        my int32 $direction = $dir eq 'fetch' ?? GIT_DIRECTION_FETCH
+                                              !! GIT_DIRECTION_PUSH;
+
+        my Git::Remote::Callbacks $callbacks .= new(|opts);
+
+        my Git::Proxy::Options $proxy-opts .= new(|opts);
+
+        my Git::Strarray $custom-headers .= new;
+
+        check(git_remote_connect(self, $direction, $callbacks, $proxy-opts,
+                                 $custom-headers));
+        self
+    }
+
     method disconnect()
         is native('git2') is symbol('git_remote_disconnect') {}
+
+    sub git_remote_ls(Pointer is rw, size_t is rw, Git::Remote
+                      --> int32)
+        is native('git2') {}
+
+
+    method ls()
+    {
+        my Pointer $ptr .= new;
+        my size_t $size .= new;
+        check(git_remote_ls($ptr, $size, self));
+        nativecast(CArray[Git::Remote::Head], $ptr)[^$size];
+    }
 
     sub git_remote_download(Git::Remote, Git::Strarray, Git::Fetch::Options
                             --> int32)
