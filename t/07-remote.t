@@ -3,7 +3,7 @@ use Test::When <online>;
 use File::Temp;
 use LibGit2;
 
-plan 11;
+plan 21;
 
 my $remote-url = 'https://github.com/CurtTilmes/test-repo.git';
 
@@ -31,4 +31,22 @@ is set($remote.ls».name), set(<HEAD refs/heads/master>), 'remote ls';
 lives-ok { $remote.disconnect }, 'remote disconnect';
 
 is $remote.connected, False, 'disconnected';
+
+is $remote.get-fetch-refspecs, <+refs/heads/*:refs/remotes/origin/*>,
+    'get-fetch-refspecs';
+
+for $remote.refspecs
+{
+    is $_, '+refs/heads/*:refs/remotes/origin/*', 'Str';
+    is .direction, 'fetch', 'direction';
+    is .dst, 'refs/remotes/origin/*', 'dst';
+    is .dst-matches('refs/remotes/origin/master'), True, 'dst-matches';
+    is .force, True, 'force';
+    is .rtransform('refs/remotes/origin/master'), 'refs/heads/master',
+        'rtransform';
+    is .src, 'refs/heads/*', 'src';
+    is .src-matches('refs/heads/master'), True, 'src-matches';
+    is .transform('refs/heads/master'), 'refs/remotes/origin/master',
+        'transform';
+}
 

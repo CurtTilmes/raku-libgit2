@@ -4,13 +4,7 @@ use Git::Buffer;
 use Git::Proxy;
 use Git::Strarray;
 use Git::Oid;
-
-# git_direction
-enum Git::Direction
-<
-    GIT_DIRECTION_FETCH
-    GIT_DIRECTION_PUSH
->;
+use Git::Refspec;
 
 # git_remote_callbacks
 class Git::Remote::Callbacks is repr('CStruct')
@@ -187,6 +181,38 @@ class Git::Remote is repr('CPointer')
         my Git::Fetch::Options $opts .= new(|opts);
         check(git_remote_download(self, $refspecs, $opts))
     }
+
+    sub git_remote_get_fetch_refspecs(Git::Strarray, Git::Remote --> int32)
+        is native('git2') {}
+
+    method get-fetch-refspecs
+    {
+        my Git::Strarray $array .= new;
+        check(git_remote_get_fetch_refspecs($array, self));
+        $array.list(:free)
+    }
+
+    sub git_remote_get_push_refspecs(Git::Strarray, Git::Remote --> int32)
+        is native('git2') {}
+
+    method get-push-refspecs
+    {
+        my Git::Strarray $array .= new;
+        check(git_remote_get_push_refspecs($array, self));
+        $array.list(:free)
+    }
+
+    method refspec-count(--> size_t)
+        is native('git2') is symbol('git_remote_refspec_count') {}
+
+    method get-refspec(size_t $n --> Git::Refspec)
+        is native('git2') is symbol('git_remote_get_refspec') {}
+
+    method refspecs
+    {
+        do for ^$.refspec-count { $.get-refspec($_) }
+    }
 }
+
 
 
