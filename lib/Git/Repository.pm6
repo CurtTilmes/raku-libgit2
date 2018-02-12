@@ -27,6 +27,23 @@ use Git::Annotated;
 use Git::Describe;
 use Git::Branch;
 
+#git_repository_state_t
+enum Git::Repository::State
+<
+    GIT_REPOSITORY_STATE_NONE
+    GIT_REPOSITORY_STATE_MERGE
+    GIT_REPOSITORY_STATE_REVERT
+    GIT_REPOSITORY_STATE_REVERT_SEQUENCE
+    GIT_REPOSITORY_STATE_CHERRYPICK
+    GIT_REPOSITORY_STATE_CHERRYPICK_SEQUENCE
+    GIT_REPOSITORY_STATE_BISECT
+    GIT_REPOSITORY_STATE_REBASE
+    GIT_REPOSITORY_STATE_REBASE_INTERACTIVE
+    GIT_REPOSITORY_STATE_REBASE_MERGE
+    GIT_REPOSITORY_STATE_APPLY_MAILBOX
+    GIT_REPOSITORY_STATE_APPLY_MAILBOX_OR_REBASE
+>;
+
 class Git::Repository is repr('CPointer')
 {
     sub git_repository_free(Git::Repository)
@@ -261,12 +278,17 @@ class Git::Repository is repr('CPointer')
     sub git_repository_head_unborn(Git::Repository --> int32)
         is native('git2') {}
 
+    sub git_repository_state(Git::Repository --> int32)
+        is native('git2') {}
+
     method new()
     {
         my Pointer $ptr .= new;
         check(git_repository_new($ptr));
         nativecast(Git::Repository, $ptr)
     }
+
+    method state { Git::Repository::State(git_repository_state(self)) }
 
     method init(Str:D $path, Bool :$bare, |opts --> Git::Repository)
     {
