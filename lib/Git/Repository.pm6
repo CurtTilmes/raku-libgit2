@@ -25,56 +25,9 @@ use Git::Worktree;
 use Git::Odb;
 use Git::Annotated;
 use Git::Describe;
+use Git::Branch;
 
-enum Git::Branch::Type (
-    GIT_BRANCH_LOCAL  => 1,
-    GIT_BRANCH_REMOTE => 2,
-    GIT_BRANCH_ALL    => 3,
-);
-
-class Git::Repository is repr('CPointer') {...}
-
-class Git::Branch::Iterator does Iterator
-{
-    has Pointer $.iter;
-
-    sub git_branch_iterator_new(Pointer is rw, Git::Repository, int32 --> int32)
-        is native('git2') {}
-
-    sub git_branch_next(Pointer is rw, int32 is rw, Pointer --> int32)
-        is native('git2') {}
-
-    sub git_branch_iterator_free(Pointer)
-        is native('git2') {}
-
-    multi method new(Git::Repository $repo,
-                     Bool :$local = False, Bool :$remote = False)
-    {
-        my Git::Branch::Type $type =
-            $local && $remote ?? GIT_BRANCH_ALL
-                              !! $local ?? GIT_BRANCH_LOCAL
-                                        !! $remote ?? GIT_BRANCH_REMOTE
-                                                   !! GIT_BRANCH_ALL;
-
-        my Pointer $iter .= new;
-        check(git_branch_iterator_new($iter, $repo, $type));
-        samewith(:$iter)
-    }
-
-    method pull-one
-    {
-        my Pointer $ptr .= new;
-        my int32 $type = 0;
-        my $ret = git_branch_next($ptr, $type, $!iter);
-        return IterationEnd if $ret == GIT_ITEROVER;
-        check($ret);
-        nativecast(Git::Reference, $ptr)
-    }
-
-    submethod DESTROY { git_branch_iterator_free($_) with $!iter }
-}
-
-class Git::Repository
+class Git::Repository is repr('CPointer')
 {
     sub git_repository_free(Git::Repository)
         is native('git2') {}
@@ -297,6 +250,15 @@ class Git::Repository
 
     sub git_describe_workdir(Pointer is rw, Git::Repository,
                              Git::Describe::Options --> int32)
+        is native('git2') {}
+
+    sub git_repository_set_head(Git::Repository, Str --> int32)
+        is native('git2') {}
+
+    sub git_repository_head_detached(Git::Repository --> int32)
+        is native('git2') {}
+
+    sub git_repository_head_unborn(Git::Repository --> int32)
         is native('git2') {}
 
     method new()
@@ -589,13 +551,20 @@ class Git::Repository
         nativecast(Git::Blame, $ptr)
     }
 
-    method branch-create(Str $branch-name, Git::Commit $target,
-                         Bool :$force = False)
+    multi method branch-create(Str $branch-name, Git::Commit $target,
+                               Bool :$force = False, Bool :$set-head)
     {
         my Pointer $ptr .= new;
         check(git_branch_create($ptr, self, $branch-name, $target,
                                 $force ?? 1 !! 0));
-        nativecast(Git::Reference, $ptr)
+        my $ref = nativecast(Git::Reference, $ptr);
+        $.set-head($ref.name) if $set-head;
+        $ref
+    }
+
+    multi method branch-create(Str $branch-name, Git::Oid $target-id, |opts)
+    {
+        samewith($branch-name, $.commit-lookup($target-id), |opts)
     }
 
     method branch-lookup(Str $branch-name, Bool :$remote = False)
@@ -606,9 +575,9 @@ class Git::Repository
         nativecast(Git::Reference, $ptr)
     }
 
-    method branch-list(--> Seq)
+    method branch-list(|opts --> Seq)
     {
-        Seq.new(Git::Branch::Iterator.new(self))
+        Seq.new(Git::Branch::Iterator.new(self, |opts))
     }
 
     method object(Git::Tree::Entry $entry)
@@ -871,6 +840,28 @@ class Git::Repository
     method is-shallow(--> Bool)
     {
         git_repository_is_shallow(self) == 1
+    }
+
+    method set-head(Str:D $refname)
+    {
+        check(git_repository_set_head(self, $refname));
+        self
+    }
+
+    method head-detached()
+    {
+        my $ret = git_repository_head_detached(self);
+        $ret == 1 ?? True
+                  !! $ret == 0 ?? False
+                               !! check($ret)
+    }
+
+    method head-unborn()
+    {
+        my $ret = git_repository_head_unborn(self);
+        $ret == 1 ?? True
+                  !! $ret == 0 ?? False
+                               !! check($ret)
     }
 
     submethod DESTROY { git_repository_free(self) }

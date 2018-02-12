@@ -103,21 +103,10 @@ Get status for a specific file/path:
     say $status.path;
     say "new in workdir" if $status.is-workdir-new;
 
-Other queries on status:
-  * is-current
-  * is-index-new
-  * is-index-modified
-  * is-index-deleted
-  * is-index-renamed
-  * is-index-typechange
-  * is-workdir-new
-  * is-workdir-modified
-  * is-workdir-deleted
-  * is-workdir-typechange
-  * is-workdir-renamed
-  * is-workdir-unreadable
-  * is-ignored
-  * is-conflicted
+Other queries on status: is-current is-index-new is-index-modified
+is-index-deleted is-index-renamed is-index-typechange is-workdir-new
+is-workdir-modified is-workdir-deleted is-workdir-typechange
+is-workdir-renamed is-workdir-unreadable is-ignored is-conflicted
 
 Query for status of everything, or specific pathes/globs:
 

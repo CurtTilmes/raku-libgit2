@@ -161,7 +161,7 @@ class Git::Reference
     method resolve
     {
         my Pointer $ptr .= new;
-        check(git_referencee_resolve($ptr, self));
+        check(git_reference_resolve($ptr, self));
         nativecast(Git::Reference, $ptr)
     }
 

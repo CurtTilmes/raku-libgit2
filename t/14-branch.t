@@ -2,35 +2,50 @@ use Test;
 use File::Temp;
 use LibGit2;
 
-my $test-repo-dir = '/tmp/mine'; #tempdir;
+plan 18;
 
-diag "Test Repo $test-repo-dir";
+my $testdir = tempdir;
 
-ok my $repo = Git::Repository.init($test-repo-dir), 'init';
+ok my $repo = Git::Repository.init($testdir), 'init';
 
-my $commit = $repo.commit-lookup(Git::Oid.new('09b0f95e3618ccb1284adbf4a210afc6d849c8c8'));
+isa-ok my $commit-id = $repo.commit(:root, message => 'Initial root commit'),
+    Git::Oid, 'commit';
 
-#my $ref = $repo.reference-lookup('refs/heads/abranch');
-#my $ref = $repo.branch-create('abranch', $commit);
+isa-ok $repo.commit-lookup($commit-id), Git::Commit, 'lookup commit';
 
-my $ref = $repo.branch-lookup('mybranch');
+for <a b c>
+{
+    $testdir.IO.child("{$_}file").spurt("This is some content for file $_.\n");
+}
 
-say $ref.is-head;
-say $ref.is-branch;
+lives-ok { $repo.index.add-all.write }, 'All added';
 
-say $ref.branch-name;
+isa-ok $commit-id = $repo.commit(message => "Adding some files"),
+    Git::Oid, 'commit';
 
-#$ref.branch-delete;
+throws-like { $repo.reference-lookup('refs/heads/abranch') },
+    X::Git, 'branch not found';
 
-#for $repo.branch-list -> $r
-#{
-#    say $r.branch-name;
-#}
+ok my $ref = $repo.branch-create('abranch', $commit-id, :set-head),
+    'branch-create set-head';
 
-say $ref.branch-upstream;
+is $ref.is-branch, True, 'branch is branch';
+is $ref.is-head, True, 'branch is head';
 
-#$ref.branch-set-upstream();
+is $ref.branch-name, 'abranch', 'branch-name';
+is $ref.name, 'refs/heads/abranch', 'name';
 
-my $newref = $ref.branch-move('newbranch');
+is set($repo.branch-list».branch-name), set(<master abranch>), 'branch-list';
 
-say $newref.branch-name;
+throws-like { $ref.branch-delete }, X::Git, 'cannot delete HEAD branch';
+
+ok $repo.set-head('refs/heads/master'), 'set HEAD to master';
+
+is $repo.head-detached, False, 'head-detached';
+
+ok my $newref = $ref.branch-move('newbranch'), 'branch-move';
+
+is set($repo.branch-list».branch-name), set(<master newbranch>), 'branch-list';
+
+lives-ok { $newref.branch-delete }, 'ok to delete branch now';
+
