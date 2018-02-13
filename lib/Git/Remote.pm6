@@ -5,12 +5,13 @@ use Git::Proxy;
 use Git::Strarray;
 use Git::Oid;
 use Git::Refspec;
+use Git::Cred;
 
 # git_remote_callbacks
 class Git::Remote::Callbacks is repr('CStruct')
 {
     has int32 $.version = 1;
-    has Pointer $.side-band-progress;
+    has Pointer $.sideband-progress;
     has Pointer $.completion;
     has Pointer $.credentials;
     has Pointer $.certificate_check;
@@ -21,15 +22,21 @@ class Git::Remote::Callbacks is repr('CStruct')
     has Pointer $.push-update-reference;
     has Pointer $.push-negotiation;
     has Pointer $.transport;
-    has Pointer $.payload;
+    has int64 $.payload;
+
+    submethod BUILD(|opts)
+    {
+    }
 }
 
+# git_fetch_prune_t
 enum Git::Fetch::Prune <
     GIT_FETCH_PRUNE_UNSPECIFIED
     GIT_FETCH_PRUNE
     GIT_FETCH_NO_PRUNE
 >;
 
+# git_remote_autotag_option_t
 enum Git::Remote::Autotag::Option <
     GIT_REMOTE_DOWNLOAD_TAGS_UNSPECIFIED
     GIT_REMOTE_DOWNLOAD_TAGS_AUTO
@@ -37,6 +44,7 @@ enum Git::Remote::Autotag::Option <
     GIT_REMOTE_DOWNLOAD_TAGS_ALL
 >;
 
+# git_fetch_options
 class Git::Fetch::Options is repr('CStruct')
 {
     has int32 $.version = 1;
@@ -51,23 +59,42 @@ class Git::Fetch::Options is repr('CStruct')
         is native('git2') {}
 
     submethod BUILD(Bool :$prune,
-                    Str  :$tags where 'unspecified'|'auto'|'none'|'all'
-                         = 'unspecified',
-                    int32 :$!update-fetchhead)
+                    Str  :$tags,
+                    int32 :$!update-fetchhead,
+                    |opts)
     {
         check(git_fetch_init_options(self, 1));
 
         with $prune { $!prune = $_ ?? GIT_FETCH_PRUNE !! GIT_FETCH_NO_PRUNE }
 
-        with $tags
-        {
-            $!download-tags = do given $tags
-            {
-                when 'auto' { GIT_REMOTE_DOWNLOAD_TAGS_AUTO }
-                when 'none' { GIT_REMOTE_DOWNLOAD_TAGS_NONE }
-                when 'all'  { GIT_REMOTE_DOWNLOAD_TAGS_ALL  }
-            }
-        }
+        $!download-tags = self.autotag-lookup($_) with $tags;
+
+        $!callbacks := Git::Remote::Callbacks.new(|opts);
+    }
+
+    method autotag-lookup(Str $tag-flag)
+    {
+        Git::Remote::Autotag::Option::{"GIT_REMOTE_DOWNLOAD_TAGS_$tag-flag.uc()"}
+        // die "Unknown Remote Autotag Option $tag-flag"
+    }
+
+}
+
+# git_push_options
+class Git::Push::Options is repr('CStruct')
+{
+    has uint32 $.version = 1;
+    has int32 $.pb-parallelism;
+    HAS Git::Remote::Callbacks $.callbacks;
+    HAS Git::Proxy::Options $.proxy-opts;
+    HAS Git::Strarray $.custom-headers;
+
+    sub git_push_init_options(Git::Push::Options, uint32 --> int32)
+        is native('git2') {}
+
+    submethod BUILD(|opts)
+    {
+        check(git_push_init_options(self, 1));
     }
 }
 
@@ -178,9 +205,10 @@ class Git::Remote is repr('CPointer')
                             --> int32)
         is native('git2') {}
 
-    method download(|opts)
+    method download(*@refspecs, |opts)
     {
         my Git::Strarray $refspecs;
+        $refspecs .= new(@refspecs) if @refspecs;
         my Git::Fetch::Options $opts .= new(|opts);
         check(git_remote_download(self, $refspecs, $opts))
     }
@@ -227,6 +255,30 @@ class Git::Remote is repr('CPointer')
     {
         do for ^$.refspec-count { $.get-refspec($_) }
     }
+
+    sub git_remote_fetch(Git::Remote, Git::Strarray, Git::Fetch::Options,
+                         Str --> int32)
+        is native('git2') {}
+
+    method fetch(Str :$message, *@refspecs, |opts)
+    {
+        my Git::Strarray $array;
+        $array .= new(@refspecs) if @refspecs;
+        my Git::Fetch::Options $opts .= new(|opts);
+        check(git_remote_fetch(self, $array, $opts, $message))
+    }
+
+    sub git_remote_push(Git::Remote, Git::Strarray, Git::Push::Options --> int32)
+        is native('git2') {}
+
+    method push(*@refspecs, |opts)
+    {
+        my Git::Strarray $array;
+        $array .= new(@refspecs) if @refspecs;
+        my Git::Push::Options $opts .= new(|opts);
+        check(git_remote_push(self, $array, $opts))
+    }
+
 }
 
 

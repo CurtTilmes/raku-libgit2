@@ -3,7 +3,7 @@ use Test::When <online>;
 use File::Temp;
 use LibGit2;
 
-plan 21;
+plan 23;
 
 my $remote-url = 'https://github.com/CurtTilmes/test-repo.git';
 
@@ -28,6 +28,8 @@ is $remote.default-branch, 'refs/heads/master', 'default-branch';
 
 is set($remote.ls».name), set(<HEAD refs/heads/master>), 'remote ls';
 
+lives-ok { $remote.download }, 'download';
+
 lives-ok { $remote.disconnect }, 'remote disconnect';
 
 is $remote.connected, False, 'disconnected';
@@ -50,3 +52,4 @@ for $remote.refspecs
         'transform';
 }
 
+lives-ok { $remote.fetch }, 'fetch';

@@ -481,16 +481,10 @@ class Git::Repository is repr('CPointer')
         check(git_remote_add_push(self, $remote, $refspec))
     }
 
-    method remote-set-autotag(Str:D $remote,
-                              Str $tags where 'auto'|'none'|'all')
+    method remote-set-autotag(Str:D $remote, Str:D $tags = 'unspecified')
     {
-        my int32 $opt = do given $tags
-        {
-            when 'auto' { GIT_REMOTE_DOWNLOAD_TAGS_AUTO }
-            when 'none' { GIT_REMOTE_DOWNLOAD_TAGS_NONE }
-            when 'all'  { GIT_REMOTE_DOWNLOAD_TAGS_ALL  }
-        }
-        check(git_remote_set_autotag(self, $remote, $opt))
+        check(git_remote_set_autotag(self, $remote,
+            Git::Fetch::Options.autotag-lookup($tags)))
     }
 
     method remote-delete(Str:D $name)
