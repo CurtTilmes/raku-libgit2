@@ -56,5 +56,19 @@ class Git::Cred is repr('CPointer')
         is native('git2') {}
 
     method has-username { git_cred_has_username(self) == 1 }
+
+    sub git_cred_ssh_key_new(Pointer is rw, Str, Str, Str, Str --> int32)
+        is native('git2') {}
+
+    method ssh-key-new(Str:D $username,
+                       Str:D $publickey,
+                       Str:D $privatekey,
+                       Str:D $passphrase)
+    {
+        my Pointer $ptr .= new;
+        check(git_cred_ssh_key_new($ptr, $username, $publickey, $privatekey,
+                                   $passphrase));
+        nativecast(Git::Cred, $ptr)
+    }
 }
 

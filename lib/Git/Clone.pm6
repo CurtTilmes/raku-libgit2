@@ -36,8 +36,8 @@ class Git::Clone::Options is repr('CStruct')
 
         if opts
         {
-            $!checkout-opts := Git::Checkout::Options.new(|opts);
-            $!fetch-opts := Git::Fetch::Options.new(|opts);
+            $!checkout-opts.BUILD(|opts);
+            $!fetch-opts.BUILD(|opts);
         }
 
         $!bare = $bare ?? 1 !! 0;

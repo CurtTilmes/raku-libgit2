@@ -6,6 +6,16 @@ use Git::Strarray;
 use Git::Oid;
 use Git::Refspec;
 use Git::Cred;
+use Git::Callback;
+
+sub memcpy(Pointer, Pointer is rw, size_t --> Pointer) is native {}
+
+sub cred-acquire-cb(Pointer $cred-ptr, Str $url, Str $username-from-url,
+                    uint32 $allowed-types, Pointer $payload --> int32)
+{
+    memcpy($cred-ptr, $payload, nativesizeof(Pointer));
+    return 0;
+}
 
 # git_remote_callbacks
 class Git::Remote::Callbacks is repr('CStruct')
@@ -22,10 +32,15 @@ class Git::Remote::Callbacks is repr('CStruct')
     has Pointer $.push-update-reference;
     has Pointer $.push-negotiation;
     has Pointer $.transport;
-    has int64 $.payload;
+    has Pointer $.payload;
 
-    submethod BUILD(|opts)
+    submethod BUILD(Git::Cred :$cred)
     {
+        if $cred
+        {
+            $!credentials := callback-pointer(&cred-acquire-cb);
+            $!payload := nativecast(Pointer, $cred);
+        }
     }
 }
 
@@ -69,7 +84,11 @@ class Git::Fetch::Options is repr('CStruct')
 
         $!download-tags = self.autotag-lookup($_) with $tags;
 
-        $!callbacks := Git::Remote::Callbacks.new(|opts);
+        if (opts)
+        {
+            $!callbacks.BUILD(|opts);
+#            $!proxy-opts.BUILD(|opts);
+        }
     }
 
     method autotag-lookup(Str $tag-flag)
@@ -95,6 +114,12 @@ class Git::Push::Options is repr('CStruct')
     submethod BUILD(|opts)
     {
         check(git_push_init_options(self, 1));
+
+        if (opts)
+        {
+            $!callbacks.BUILD(|opts);
+#            $!proxy-opts.BUILD(|opts);
+        }
     }
 }
 
@@ -280,6 +305,3 @@ class Git::Remote is repr('CPointer')
     }
 
 }
-
-
-
