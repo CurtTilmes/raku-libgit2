@@ -103,7 +103,7 @@ class Git::Fetch::Options is repr('CStruct')
 class Git::Push::Options is repr('CStruct')
 {
     has uint32 $.version = 1;
-    has int32 $.pb-parallelism;
+    has uint32 $.pb-parallelism;
     HAS Git::Remote::Callbacks $.callbacks;
     HAS Git::Proxy::Options $.proxy-opts;
     HAS Git::Strarray $.custom-headers;
@@ -155,6 +155,9 @@ class Git::Remote is repr('CPointer')
 
     method url(--> Str)
         is native('git2') is symbol('git_remote_url') {}
+
+    method pushurl(--> Str)
+        is native('git2') is symbol('git_remote_pushurl') {}
 
     method name(--> Str)
         is native('git2') is symbol('git_remote_name') {}
@@ -250,6 +253,22 @@ class Git::Remote is repr('CPointer')
         check(git_remote_upload(self, $refspecs, $opts))
     }
 
+    sub git_remote_update_tips(Git::Remote, Git::Remote::Callbacks, int32,
+                               int32, Str --> int32)
+        is native('git2') {}
+
+    method update-tips(Bool :$update-fetchhead,
+                       Str :$tags,
+                       Str :$message,
+                       |opts)
+    {
+        check(git_remote_update_tips(self,
+                                     Git::Remote::Callbacks.new(|opts),
+                                     $update-fetchhead ?? 1 !! 0,
+                                     $tags ?? $.autotag-lookup($tags) !! 0,
+                                     $message))
+    }
+
     sub git_remote_get_fetch_refspecs(Git::Strarray, Git::Remote --> int32)
         is native('git2') {}
 
@@ -303,5 +322,4 @@ class Git::Remote is repr('CPointer')
         my Git::Push::Options $opts .= new(|opts);
         check(git_remote_push(self, $array, $opts))
     }
-
 }
