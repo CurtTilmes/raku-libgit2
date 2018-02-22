@@ -1,46 +1,37 @@
 use Test;
+use File::Temp;
 use LibGit2;
 
-ok my $repo = Git::Repository.open('/tmp/mine'), 'open';
+plan 10;
 
-my $blame = $repo.blame-file('afile');
+my $testdir = tempdir;
 
-say $blame;
+isa-ok my $repo = Git::Repository.init($testdir),
+    Git::Repository, 'init';
 
-say $blame.hunk-count;
+isa-ok my $commit-id = $repo.commit(:root, message => 'Initial root commit'),
+    Git::Oid, 'commit';
 
-my $hunk = $blame.hunk(0);
+$testdir.IO.child('afile').spurt(q:to/END/);
+This is some content
+for the file
+so I can check out the blame.
+END
 
-say $hunk.lines-in-hunk;
-say $hunk.final_commit_id;
-say $hunk.final_start_line_number;
-say $hunk.final_signature;
-say $hunk.orig_commit_id;
-say $hunk.orig_path;
-say $hunk.orig_start_line_number;
-say $hunk.orig_signature;
-say $hunk.boundary;
+lives-ok { $repo.index.add-all.write }, 'All added';
 
-$hunk = $blame.hunk(1);
+isa-ok $commit-id = $repo.commit(message => "Adding some files"),
+    Git::Oid, 'commit';
 
-say $hunk.lines-in-hunk;
-say $hunk.final_commit_id;
-say $hunk.final_start_line_number;
-say $hunk.final_signature;
-say $hunk.orig_commit_id;
-say $hunk.orig_path;
-say $hunk.orig_start_line_number;
-say $hunk.orig_signature;
-say $hunk.boundary;
+isa-ok my $blame = $repo.blame-file('afile'), Git::Blame, 'blame-file';
 
-$hunk = $blame.line(2);
+is $blame.hunk-count, 1, 'hunk-count';
 
-say $hunk.lines-in-hunk;
-say $hunk.final_commit_id;
-say $hunk.final_start_line_number;
-say $hunk.final_signature;
-say $hunk.orig_commit_id;
-say $hunk.orig_path;
-say $hunk.orig_start_line_number;
-say $hunk.orig_signature;
-say $hunk.boundary;
+isa-ok my $hunk = $blame.hunk(0), Git::Blame::Hunk, 'hunk';
+
+is $hunk.lines-in-hunk, 3, 'lines-in-hunk';
+
+is $hunk.orig-path, 'afile', 'orig-path';
+
+is $hunk.orig-start-line-number, 1, 'orig-start-line-number';
+

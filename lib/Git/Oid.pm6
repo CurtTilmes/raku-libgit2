@@ -20,8 +20,8 @@ class Git::Oid is repr('CStruct')
     sub git_oid_fromstr(Git::Oid, Str --> int32)
         is native('git2') {}
 
-    sub git_oid_cpy(Git::Oid, Pointer)
-        is native('git2') {}
+    method copy(Git::Oid)
+        is native('git2') is symbol('git_oid_cpy') {}
 
     multi method new(Str:D $str --> Git::Oid)
     {
@@ -33,7 +33,7 @@ class Git::Oid is repr('CStruct')
     multi method new(Pointer:D $ptr --> Git::Oid)
     {
         my $oid = Git::Oid.new;
-        git_oid_cpy($oid, $ptr);
+        $oid.copy(nativecast(Git::Oid, $ptr));
         $oid
     }
 

@@ -597,10 +597,10 @@ class Git::Repository is repr('CPointer')
         samewith(Git::Oid.new($oid-str, Git::Objectish.type($type)))
     }
 
-    method blame-file(Str $path)
+    method blame-file(Str $path, |opts)
     {
         my Pointer $ptr .= new;
-        my Git::Blame::Options $opts .= new;
+        my Git::Blame::Options $opts .= new(|opts);
         check(git_blame_file($ptr, self, $path, $opts));
         nativecast(Git::Blame, $ptr)
     }
