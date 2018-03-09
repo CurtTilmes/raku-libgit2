@@ -1,6 +1,11 @@
 LibGit2 -- Direct access to Git via libgit2 library
 ===================================================
 
+Note:
+
+This is a WORK IN PROGRESS.  The tests are under construction and many
+of them probably won't work on your computer..
+
 This module provides Perl 6 access to [libgit2](https://libgit2.github.com/)
 
 That library must be installed, and this module will be subject to the
@@ -14,6 +19,9 @@ raise an issue.
 
 There are also still some unimplemented corners, so if you see anything
 you can't do, raise an issue and we can try to add more libgit2 bindings.
+Also some functionality that looks like it should work doesn't seem to...
+Debugging, test improvements, etc. are all appreciated -- feel free to
+ask questions or offer patches!
 
 For now, there are also some 64-bit assumptions.  If there is demand for
 a 32-bit version, there are ways to adapt it I can work with someone who
@@ -110,9 +118,8 @@ is-workdir-renamed is-workdir-unreadable is-ignored is-conflicted
 
 Query for status of everything, or specific pathes/globs:
 
-    for $repo.status-each
-    {
-        say "new" if .is-workdir-new;
+    for $repo.status-each {
+        say 'new' if .is-workdir-new;
     }
 
     say .path for $repo.status-each('*.p6', :include-untracked);
