@@ -1,35 +1,22 @@
 use Test;
+use Test::When <online>;
 use File::Temp;
 use LibGit2;
 
-my $test-repo-dir = '/tmp/mine'; # tempdir;
+plan 6;
 
-diag "Test Repo $test-repo-dir";
+my $remote = 'https://github.com/CurtTilmes/test-repo.git';
 
-ok my $repo = Git::Repository.open($test-repo-dir), 'open';
+my $repodir = tempdir;
 
-my $tree = $repo.revparse-single('HEAD^{tree}');
+ok my $repo = Git::Repository.clone($remote, $repodir), 'clone';
 
-say $tree;
+ok my $tree = $repo.revparse-single('HEAD^{tree}'), 'revparse-single tree';
 
-#my $commit = $repo.lookup('f213e199f06e017f5c0f77cb95a5e7656d0a59ec');
-#my $tree = $commit.tree;
-
-#my $tree = $repo.lookup('63f62cea33f976ea666c7c5679b36ff5ca9ceec8');
-
-#my $tree = $repo.lookup(Git::Oid.new('2195527d5ae4c2607be69e58292a641a979cddea'));
-
-#say $tree.entrycount;
-
-#for ^$tree.entrycount
-#{
-#    my $entry = $tree.entry-byindex($_);
-#
-#    say $entry;
-#    say $repo.object($entry).id;
-#}
+my @files = <LICENSE README.md>;
 
 for $tree.walk.list -> ($root, $entry)
 {
-    say "$root$entry.name()" if $entry.type == GIT_OBJ_BLOB
+	ok $entry.type == GIT_OBJ_BLOB, 'type Blob';
+	ok $entry.name ~~ /@files/, "name - $entry.name()";
 }

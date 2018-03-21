@@ -41,7 +41,7 @@ class Git::Tree::Entry is repr('CPointer')
 
     method gist
     {
-        "Git::Entry($.type():$.name())"
+        "Git::Tree::Entry($.type():$.name())"
     }
 }
 
