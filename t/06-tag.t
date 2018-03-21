@@ -2,7 +2,13 @@ use Test;
 use File::Temp;
 use LibGit2;
 
-ok my $repo = Git::Repository.open-ext($*PROGRAM.Str), 'open';
+plan 6;
+
+my $remote = 'https://github.com/CurtTilmes/test-repo.git';
+
+my $repodir = tempdir;
+
+ok my $repo = Git::Repository.clone($remote, $repodir), 'clone';
 
 ok (my @tag-list = $repo.tag-list), 'tag list';
 
