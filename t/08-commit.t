@@ -1,64 +1,44 @@
 use Test;
+use Test::When <online>;
 use File::Temp;
 use LibGit2;
 
-ok my $repo = Git::Repository.open('/tmp/mine'), 'open';
+plan 18;
 
-my $oid = Git::Oid.new('09b0f95e3618ccb1284adbf4a210afc6d849c8c8');
+my $remote = 'https://github.com/CurtTilmes/test-repo.git';
 
-my $commit = $repo.commit-lookup($oid);
-#my $commit = $repo.lookup($oid, 'commit');
+my $repodir = tempdir;
 
-say $commit;
+ok my $repo = Git::Repository.clone($remote, $repodir), 'clone';
 
-my $sig = $commit.author;
+ok my $oid = Git::Oid.new('d53bb27c0ecc26378aee6c9999012b144eba0c04'),
+	'create oid';
 
-say $sig.name;
-say $sig.email;
-say $sig.when;
+ok my $commit = $repo.commit-lookup($oid), 'commit-lookup';
 
-say $commit.body;
+ok my $author = $commit.author, 'author';
 
-say $commit.committer;
+is $author.name, 'Curt Tilmes', 'author name';
+is $author.email, 'curt@tilmes.org', 'author email';
+is $author.when, DateTime.new('2018-02-09T18:07:07-05:00'), 'author when';
 
-say $commit.header('committer');
+ok my $committer = $commit.committer, 'committer';
 
-say ~$commit.id;
+is $committer.name, 'GitHub', 'committer name';
+is $committer.email, 'noreply@github.com', 'committer email';
 
-say $commit.owner;
+is $commit.type, GIT_OBJ_COMMIT, 'commit type';
 
-say $commit.type;
-say $commit.type-string;
+is $commit.type-string, 'commit', 'commit type string';
 
-say $commit.summary;
+is $commit.summary, 'Initial commit', 'summary';
 
-say $commit.message;
+is $commit.message, 'Initial commit', 'message';
 
-say $commit.encoding;
+is $commit.encoding, Str, 'encoding not specified';
 
-say $commit.time;
+is $commit.time, DateTime.new('2018-02-09T18:07:07-05:00'), 'time';
 
-say $commit.raw-header;
+is $commit.tree-id, '75d09448ab10ddc2051b955474ac4db5f757dbbd', 'tree-id';
 
-say ~$commit.tree-id;
-
-say ~$commit.tree.id;
-
-say $commit.parentcount;
-
-say ~$commit.parent-id;
-
-
-my $parent = $commit.parent;
-
-say $parent.message;
-
-my $anc = $commit.ancestor(1);
-
-say $anc.message;
-
-say $repo.reference-list;
-
-#$repo.tag-create('1.0', $commit);
-
-say $repo.reference-list;
+is $commit.parentcount, 0, 'no parent';
