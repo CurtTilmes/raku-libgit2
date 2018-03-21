@@ -2,7 +2,13 @@ use Test;
 use File::Temp;
 use LibGit2;
 
-ok my $repo = Git::Repository.open($*PROGRAM.Str, :search), 'open';
+plan 11;
+
+my $remote = 'https://github.com/CurtTilmes/test-repo.git';
+
+my $repodir = tempdir;
+
+ok my $repo = Git::Repository.clone($remote, $repodir), 'clone';
 
 ok my $ref = $repo.reference-lookup('refs/heads/master'), 'reference master';
 
@@ -20,6 +26,11 @@ is $ref.is-branch, True, 'is-branch';
 
 ok (my @list = $repo.reference-list()), 'reference-list';
 
-.name.say for $repo.references;
+is-deeply $repo.references.map({.name}).sort,
+	<refs/heads/master refs/remotes/origin/master>,
+	'references names';
 
-.short.say for $repo.references;
+is-deeply $repo.references.map({.short}).sort,
+	<master origin/master>,
+	'references short names';
+
