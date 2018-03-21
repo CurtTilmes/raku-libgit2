@@ -1,17 +1,18 @@
 use Test;
+use Test::When <online>;
 use File::Temp;
 use LibGit2;
 
-my $test-repo-dir = '/tmp/mine'; # tempdir;
+plan 4;
 
-diag "Test Repo $test-repo-dir";
+my $remote = 'https://github.com/CurtTilmes/test-repo.git';
 
-ok my $repo = Git::Repository.open($test-repo-dir), 'open';
+my $repodir = tempdir;
 
-my $builder = $repo.treebuilder;
+ok my $repo = Git::Repository.clone($remote, $repodir), 'clone';
 
-say $builder;
+ok my $builder = $repo.treebuilder, 'treebuilder';
 
-say $builder.entrycount;
+is $builder.entrycount, 0, 'entrycount';
 
-$builder.clear;
+lives-ok { $builder.clear }, 'clear';

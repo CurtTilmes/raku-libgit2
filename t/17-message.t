@@ -1,6 +1,8 @@
 use Test;
 use LibGit2;
 
+plan 1;
+
 my $message = q:to/END/;
 This is my message foo
 I like it
@@ -8,8 +10,8 @@ I like it
 ignore the comment
 END
 
-say $message;
-
-my $pretty = Git::Message.prettify($message);
-
-say $pretty;
+is Git::Message.prettify($message), q:to/END/, 'Message prettify';
+This is my message foo
+I like it
+ignore the comment
+END
