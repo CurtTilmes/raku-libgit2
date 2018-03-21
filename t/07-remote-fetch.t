@@ -26,7 +26,9 @@ is $remote.connected, True, 'connected';
 
 is $remote.default-branch, 'refs/heads/master', 'default-branch';
 
-is set($remote.ls».name), set(<HEAD refs/heads/master>), 'remote ls';
+is set($remote.ls».name),
+	set(<HEAD refs/heads/master refs/tags/0.1 refs/tags/0.2>),
+	'remote ls';
 
 lives-ok { $remote.download }, 'download';
 
