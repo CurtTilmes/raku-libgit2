@@ -1,9 +1,12 @@
 use Test;
+use File::Temp;
 use LibGit2;
 
-my $repo = Git::Repository.open('/tmp/mine');
+plan 6;
 
-plan 5;
+my $repodir = tempdir;
+
+ok my $repo = Git::Repository.init($repodir), 'init';
 
 is $repo.is-ignored('foo.c'), False, 'foo.c not ignored';
 
