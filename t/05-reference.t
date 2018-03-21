@@ -1,4 +1,5 @@
 use Test;
+use Test::When <online>;
 use File::Temp;
 use LibGit2;
 
