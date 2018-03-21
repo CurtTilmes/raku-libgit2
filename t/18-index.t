@@ -1,22 +1,27 @@
 use Test;
+use Test::When <online>;
+use File::Temp;
 use LibGit2;
 
-my $repo = Git::Repository.open('/tmp/mine');
+plan 10;
 
-my $index = $repo.index;
+my $remote = 'https://github.com/CurtTilmes/test-repo.git';
 
-say $index.entrycount;
+my $repodir = tempdir;
 
-my $entry = $index.get-bypath('afile', 0);
+ok my $repo = Git::Repository.clone($remote, $repodir), 'clone';
 
-say "here";
+ok my $index = $repo.index, 'index';
 
-say $entry;
+is $index.entrycount, 2, 'entrycount';
 
-exit;
+ok my $entry = $index.get-bypath('README.md', 0), 'get-bypath';
+
+is $entry.file-size, 11, 'file-size';
+is $entry.path, 'README.md', 'path';
+is $entry.id, '639f958ef57a5e0f4aca622f068e734354e2dd2e', 'id';
 
 subtest 'Memory', {
-
     ok my $index = Git::Index.new, 'new';
 
     ok $index.version, 'version';
@@ -37,21 +42,24 @@ subtest 'Memory', {
 subtest 'Repo', {
     ok my $index = $repo.index, 'index';
 
-    say $index.entrycount;
-
-    say $index.get-byindex(0);
-
     lives-ok { $index.read }, 'read';
 
-    lives-ok { $index.write }, 'read';
+    lives-ok { $index.write }, 'write';
 }
 
 subtest 'By File', {
-    ok my $index = Git::Index.open('/tmp/mine/.git/index'), 'open';
+    ok my $index = Git::Index.open("$repodir/.git/index"), 'open';
 
     lives-ok { $index.read }, 'read';
 
-    lives-ok { $index.write }, 'read';
+    lives-ok { $index.write }, 'write';
 
+	is $index.entrycount, 2, 'entrycount';
+
+	ok my $entry = $index.get-bypath('README.md', 0), 'get-bypath';
+
+	is $entry.file-size, 11, 'file-size';
+	is $entry.path, 'README.md', 'path';
+	is $entry.id, '639f958ef57a5e0f4aca622f068e734354e2dd2e', 'id';
 }
 
