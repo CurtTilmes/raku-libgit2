@@ -49,7 +49,7 @@ class Git::Commit is repr('CPointer') does Git::Objectish
     method time(--> DateTime)
     {
         DateTime.new(git_commit_time(self),
-            timezone => git_commit_time_offset(self))
+            timezone => 60 * git_commit_time_offset(self))
     }
 
     sub git_commit_tree_id(Git::Commit --> Pointer)
