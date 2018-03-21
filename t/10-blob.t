@@ -26,7 +26,7 @@ subtest 'Memory',
 
     is $blob.rawsize, 13, 'rawsize';
 
-    is $blob.content.decode, 'Add this blob', 'content';
+    is $blob, 'Add this blob', 'content';
 }
 
 subtest 'File',
@@ -49,7 +49,7 @@ subtest 'File',
 
     is $blob.rawsize, 24, 'rawsize';
 
-    is $blob.content.decode, "This is a blob on disk.\n", 'content';
+    is $blob, "This is a blob on disk.\n", 'content';
 }
 
 subtest 'Work Dir File',
@@ -72,5 +72,5 @@ subtest 'Work Dir File',
 
     is $blob.rawsize, 18, 'rawsize';
 
-    is $blob.content.decode, "Working dir file.\n", 'content';
+    is $blob, "Working dir file.\n", 'content';
 }

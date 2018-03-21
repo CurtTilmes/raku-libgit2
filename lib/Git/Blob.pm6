@@ -13,7 +13,7 @@ class Git::Blob is repr('CPointer') does Git::Objectish
 
     method owner { nativecast(::('Git::Repository'), $.owner-ptr) }
 
-    method rawcontent( --> CArray[uint8])
+    method rawcontent(--> CArray[uint8])
         is native('git2') is symbol('git_blob_rawcontent') {}
 
     method rawsize(--> int64)
@@ -24,7 +24,7 @@ class Git::Blob is repr('CPointer') does Git::Objectish
 
     method is-binary { git_blob_is_binary(self) == 1 }
 
-    method Buf { buf8.new($.rawcontent(self)[^$.rawsize]) }
+    method Buf { buf8.new($.rawcontent[^$.rawsize]) }
 
     method Str { $.Buf.decode }
 
