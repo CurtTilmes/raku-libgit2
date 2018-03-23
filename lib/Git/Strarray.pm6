@@ -21,7 +21,7 @@ class Git::Strarray is repr('CStruct') is Positional
     method list(Bool :$free)
     {
         my @list = $!strings[^$!elems];
-        self.free;
+        self.free if $free;
         @list
     }
 }
