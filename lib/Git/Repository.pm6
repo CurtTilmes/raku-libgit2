@@ -747,7 +747,7 @@ class Git::Repository is repr('CPointer')
         $ignored == 1
     }
 
-    method diff-index-to-workdir(Git::Index :$index, |opts)
+    method diff-index-to-workdir(Git::Index :$index = self.index, |opts)
     {
         my Pointer $ptr .= new;
         my Git::Diff::Options $opts;
@@ -756,9 +756,10 @@ class Git::Repository is repr('CPointer')
         nativecast(Git::Diff, $ptr)
     }
 
-    method diff-tree-to-index(Git::Tree :$tree,
-                              Git::Index :$index,
-                              |opts)
+    method diff-tree-to-index(
+		Git::Tree :$tree = self.revparse-single('HEAD^{tree}'),
+        Git::Index :$index = self.index,
+        |opts)
     {
         my Pointer $ptr .= new;
         my Git::Diff::Options $opts;
@@ -767,7 +768,8 @@ class Git::Repository is repr('CPointer')
         nativecast(Git::Diff, $ptr)
     }
 
-    method diff-tree-to-workdir-with-index(Git::Tree :$tree, |opts)
+    method diff-tree-to-workdir-with-index(
+		Git::Tree :$tree = self.revparse-single('HEAD^{tree}'), |opts)
     {
         my Pointer $ptr .= new;
         my Git::Diff::Options $opts;
