@@ -28,10 +28,10 @@ is $ref.is-branch, True, 'is-branch';
 ok (my @list = $repo.reference-list()), 'reference-list';
 
 is-deeply $repo.references.map({.name}).sort,
-	<refs/heads/master refs/remotes/origin/master>,
+	<refs/heads/master refs/remotes/origin/master refs/tags/0.1 refs/tags/0.2>,
 	'references names';
 
 is-deeply $repo.references.map({.short}).sort,
-	<master origin/master>,
+	('0.1', '0.2', 'master', 'origin/master'),
 	'references short names';
 
