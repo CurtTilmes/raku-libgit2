@@ -2,7 +2,7 @@ use Test;
 use File::Temp;
 use LibGit2;
 
-plan 15;
+plan 11;
 
 my $testdir = tempdir;
 
@@ -21,22 +21,6 @@ isa-ok my $diff = $repo.diff-tree-to-index,
 	Git::Diff, 'diff-index-to-workdir';
 
 is $diff.elems, 1, '1 file added';
-
-ok my $patches = $diff.patches, 'patches';
-
-is $patches.elems, 1, '1 patch';
-
-isa-ok my $patch = $diff.patch(0), Git::Patch, 'first patch';
-
-is $patch, q:to/PATCH/, 'patch content';
-	diff --git a/afile b/afile
-	new file mode 100644
-	index 0000000..5966fc3
-	--- /dev/null
-	+++ b/afile
-	@@ -0,0 +1 @@
-	+This is some content for file a.
-	PATCH
 
 isa-ok my $delta = $diff.delta(0), Git::Diff::Delta, 'delta';
 
