@@ -1,10 +1,15 @@
 use Test;
 use LibGit2;
 
-use NativeCall;
+plan 4;
 
-say nativesizeof(Git::Clone::Options);
+ok my $options = Git::Clone::Options.new, 'options';
 
-my $options = Git::Clone::Options.new(tags => 'unspecified');
+nok $options.bare, 'not bare';
 
-say $options;
+
+ok $options = Git::Clone::Options.new(:bare), 'options';
+
+ok $options.bare, 'bare';
+
+
