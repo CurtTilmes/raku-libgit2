@@ -6,8 +6,6 @@ plan 4;
 
 my $test-repo-dir = tempdir;
 
-diag "Test Repo $test-repo-dir";
-
 ok my $repo = Git::Repository.init($test-repo-dir), 'init';
 
 subtest 'Memory',
