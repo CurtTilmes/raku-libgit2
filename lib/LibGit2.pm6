@@ -52,7 +52,7 @@ sub git-trace(int32 $level, Str $msg)
     say "{Git::Trace($level)} $msg"
 }
 
-class LibGit2:ver<0.1>
+class LibGit2:ver<0.2>
 {
     sub git_libgit2_version(int32 is rw, int32 is rw, int32 is rw)
         is native('git2') {}
