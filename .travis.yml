@@ -1,5 +1,8 @@
 language: perl6
 
+os:
+  - linux
+
 perl6:
   - latest
 
@@ -8,10 +11,7 @@ sudo: true
 env:
   - ONLINE_TESTING=1
 
-before_script:
-  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then sudo apt-get update; fi
-  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then sudo apt-get install libgit2-dev; fi
-
 install:
+  - sudo apt-get install libgit2-dev
   - rakudobrew build-zef
   - zef -v install .
