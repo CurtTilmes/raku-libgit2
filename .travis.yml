@@ -20,4 +20,4 @@ install:
   - sudo cp libgit2.so* /lib/x86_64-linux-gnu
   - cd ..
   - rakudobrew build-zef
-  - zef -v install .
+  - zef -v --depsonly install .
