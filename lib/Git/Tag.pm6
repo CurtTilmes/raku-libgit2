@@ -1,5 +1,6 @@
 use NativeCall;
 use Git::Object;
+use Git::Error;
 
 class Git::Tag is repr('CPointer') does Git::Objectish
 {
