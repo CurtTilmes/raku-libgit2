@@ -12,6 +12,12 @@ env:
   - ONLINE_TESTING=1
 
 install:
-  - sudo apt-get install libgit2-dev
+  - wget https://github.com/libgit2/libgit2/archive/v0.27.0.tar.gz
+  - tar xzf v0.27.0.tar.gz
+  - cd libgit2-0.27.0
+  - cmake .
+  - make
+  - cp libgit2.so* /lib/x86_64-linux-gnu
+  - cd ..
   - rakudobrew build-zef
   - zef -v install .
