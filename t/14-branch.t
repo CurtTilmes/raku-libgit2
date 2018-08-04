@@ -35,7 +35,7 @@ is $ref.is-head, True, 'branch is head';
 is $ref.branch-name, 'abranch', 'branch-name';
 is $ref.name, 'refs/heads/abranch', 'name';
 
-is set($repo.branch-list».branch-name), set(<master abranch>), 'branch-list';
+is-deeply set($repo.branch-list».branch-name), set(<master abranch>), 'branch-list';
 
 throws-like { $ref.branch-delete }, X::Git, 'cannot delete HEAD branch';
 
@@ -45,7 +45,6 @@ is $repo.head-detached, False, 'head-detached';
 
 ok my $newref = $ref.branch-move('newbranch'), 'branch-move';
 
-is set($repo.branch-list».branch-name), set(<master newbranch>), 'branch-list';
+is-deeply set($repo.branch-list».branch-name), set(<master newbranch>), 'branch-list';
 
 lives-ok { $newref.branch-delete }, 'ok to delete branch now';
-
