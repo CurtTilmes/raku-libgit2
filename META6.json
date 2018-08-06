@@ -55,7 +55,7 @@
     "LibGit2" : "lib/LibGit2.pm6"
   },
   "resources" : [ ],
-  "source-url" : "https://github.com/CurtTilmes/perl6-libgit2.git",
+  "source-url" : "git://github.com/CurtTilmes/perl6-libgit2.git",
   "support" : {
     "bugtracker" : "https://github.com/CurtTilmes/perl6-libgit2/issues",
     "source" : "https://github.com/CurtTilmes/perl6-libgit2.git"
