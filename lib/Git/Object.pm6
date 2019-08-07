@@ -1,5 +1,7 @@
 use NativeCall;
 use Git::Oid;
+use Git::Error;
+use Git::Buffer;
 
 enum Git::Type # git_otype
 (
@@ -82,9 +84,19 @@ role Git::Objectish
             default             { nativecast(::('Git::Object'), $ptr) }
         }
     }
+
+    sub git_object_short_id(Git::Buffer, Pointer --> int32) is native('git2') { }
+
+    method short-id(--> Str)
+    {
+        my Git::Buffer $buf .= new;
+        check(git_object_short_id($buf, nativecast(Pointer, self)));
+        $buf.str
+    }
 }
 
 class Git::Object is repr('CPointer') does Git::Objectish
 {
     submethod DESTROY { self.free }
+
 }
