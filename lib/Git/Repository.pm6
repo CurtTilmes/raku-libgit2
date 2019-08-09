@@ -295,6 +295,12 @@ class Git::Repository is repr('CPointer')
                              Git::Describe::Options --> int32)
         is native('git2') {}
 
+    sub git_commit_lookup(Pointer is rw, Git::Repository, Git::Oid --> int32)
+        is native('git2') {}
+
+    sub git_merge_base(Git::Oid, Git::Repository, Git::Oid, Git::Oid --> int32)
+        is native('git2') {}
+
     sub git_repository_set_head(Git::Repository, Str --> int32)
         is native('git2') {}
 
@@ -322,6 +328,19 @@ class Git::Repository is repr('CPointer')
         my Pointer $ptr .= new;
         check(git_repository_new($ptr));
         nativecast(Git::Repository, $ptr)
+    }
+
+    method merge-base(Git::Oid $one, Git::Oid $two --> Git::Oid) {
+        my $oid = Git::Oid.new;
+        my $result = git_merge_base($oid, self, $one, $two);
+        check($result);
+        return $oid;
+    }
+
+    method lookup(Git::Oid $id --> Git::Commit) {
+        my Pointer $ptr .= new;
+        check(git_commit_lookup($ptr, self, $id));
+        Git::Objectish.object($ptr)
     }
 
     method state { Git::Repository::State(git_repository_state(self)) }
