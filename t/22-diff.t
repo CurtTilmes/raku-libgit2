@@ -26,7 +26,7 @@ isa-ok my $delta = $diff.delta(0), Git::Diff::Delta, 'delta';
 
 is $delta.status, 'GIT_DELTA_ADDED', 'status';
 
-is $delta.old-file, Git::Diff::File, 'no old file';
+isa-ok $delta.old-file, Git::Diff::File, 'no old file';
 with $delta.new-file
 {
     is .id, '5966fc318ca68de951b63a9db21a4c1e07afa1ae', 'id';
