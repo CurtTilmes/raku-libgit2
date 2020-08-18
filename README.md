@@ -28,6 +28,19 @@ a 32-bit version, there are ways to adapt it I can work with someone who
 wants to tackle that.  It also doesn't currently support Windows, but
 could probably do so if someone wants to port it.  Patches welcome!
 
+Installation
+------------
+
+At the moment you cannot use `zef` for installation. You will have to
+install via cloning for the master branch, or download the latest
+release and unpack it in a convenient place.
+
+Then, cd into the new directory, and execute
+
+    $ zef install .
+
+As easy as that!
+
 Global Initialization
 ---------------------
 
