@@ -86,8 +86,7 @@ Open
 
 This will open an existing Git repo or throw an exception.
 
-    my $repo;
-    try $repo = Git::Repository.open('/my/dir');
+    try my $repo = Git::Repository.open('/my/dir');
     if not $repo {
         say "FATAL: '/my/dir' is not a Git repo.";
         exit;
