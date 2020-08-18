@@ -6,13 +6,13 @@ Note:
 This is a WORK IN PROGRESS.  The tests are under construction and many
 of them probably won't work on your computer..
 
-This module provides Perl 6 access to [libgit2](https://libgit2.github.com/)
+This module provides Raku access to [libgit2](https://libgit2.github.com/).
 
 That library must be installed, and this module will be subject to the
 features enabled during the build/install of that library.
 
 This module is **EXPERIMENTAL**.  In particular, I'm still trying to refine
-the Perl 6 API to be as friendly as possible, and also as Perl-ish as
+the Raku API to be as friendly as possible, and also as Raku-ish as
 possible.  I've converted some callbacks into Channels, and some options
 into :pairs, etc.  If you see anything that could be done better, PLEASE
 raise an issue.
@@ -48,7 +48,7 @@ Tracing
 -------
 
 If libgit2 is compiled with tracing support, you can enable that tracing
-from Perl6.
+from Raku.
 
     LibGit2.trace('debug');  # none,fatal,error,warn,info,debug,trace
 
@@ -84,7 +84,13 @@ See Git::Clone::Options for the complete clone option list.
 Open
 ----
 
-    my $repo = Git::Repository.open('/my/dir');
+This will open an existing Git repo or throw an exception.
+
+    try my $repo = Git::Repository.open('/my/dir');
+    if not $repo {
+        say "FATAL: '/my/dir' is not a Git repo.";
+        exit;
+    }
 
     my $repo = Git::Repository.open('/my/dir', :bare);
 
