@@ -4,6 +4,8 @@ use File::Temp;
 use LibGit2;
 use NativeCall;
 
+plan 5;
+
 my $remote-url = 'git@github.com:CurtTilmes/test-push.git';
 
 my $repodir = tempdir;
@@ -24,4 +26,6 @@ isa-ok my $remote = $repo.remote-lookup('origin'),
 
 is $remote.url, $remote-url, 'url';
 
-lives-ok { $remote.push(:$cred) }, 'push';
+#lives-ok { $remote.push(:$cred) }, 'push';
+
+done-testing;
