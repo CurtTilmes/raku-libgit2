@@ -31,7 +31,9 @@ could probably do so if someone wants to port it.  Patches welcome!
 Installation
 ------------
 
-At the moment you cannot use `zef` for installation. You will have to
+At the moment you may not be able to successfully install this
+module with the usual `zef install LibGit2`. If that
+fails You will have to
 install via cloning for the master branch, or download the latest
 release and unpack it in a convenient place.
 
