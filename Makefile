@@ -2,7 +2,7 @@ NAME := $(shell jq -r .name META6.json)
 VERSION := $(shell jq -r .version META6.json)
 ARCHIVENAME := $(subst ::,-,$(NAME))
 
-check: 
+check:
 	git diff-index --check HEAD
 	prove6
 
